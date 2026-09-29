@@ -1,0 +1,1486 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TD Maze Planer</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0e1013; --panel:#1a1e25; --panel2:#232833; --line:#303847; --text:#e6e9ef; --muted:#8b93a3;
+  --accent:#4cc38a; --accent2:#5aa9ff; --danger:#ff6b6b; --warn:#f5b84c;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:.2px;margin-right:6px}
+.sp{flex:1}
+button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 11px;cursor:pointer}
+button:hover{border-color:#4a5568;background:#2a3040}
+button:disabled{opacity:.4;cursor:default}
+button.primary{background:var(--accent);border-color:var(--accent);color:#08140e;font-weight:600}
+button.primary:hover{filter:brightness(1.08)}
+button.danger:hover{border-color:var(--danger);color:var(--danger)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:var(--panel2);padding:7px 16px}
+.seg button.on{background:var(--accent2);color:#06121f;font-weight:600}
+.seg.sm button{padding:5px 6px;font-size:13px}
+h3.sec-h{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;margin-bottom:0;padding:2px 0 8px;transition:margin .2s,padding .2s}
+h3.sec-h:hover{color:var(--text)}
+h3.sec-h::after{content:"▾";font-size:12px;transition:transform .2s}
+section.collapsed h3.sec-h{padding-bottom:0}
+section.collapsed h3.sec-h::after{transform:rotate(-90deg)}
+.sec-body{display:grid;grid-template-rows:1fr;transition:grid-template-rows .22s ease}
+.sec-in{overflow:hidden;min-height:0}
+section.collapsed .sec-body{grid-template-rows:0fr}
+section.collapsed .sec-in{visibility:hidden;transition:visibility 0s .22s}
+#collapseAll{background:none;border:0;color:var(--muted);font-size:12px;padding:8px 0 0;cursor:pointer;display:block;margin-left:auto}
+#collapseAll:hover{color:var(--text);background:none}
+#btnGuideTool.on{border-color:var(--accent2);background:#26344a}
+.pal.dim button.on{border-color:var(--line);background:var(--panel2)}
+.pal.dim{opacity:.6}
+.sw2{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:1px solid rgba(0,0,0,.35)}
+.seglist em{font-style:normal}
+main{flex:1;display:flex;min-height:0}
+aside{width:300px;flex:none;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:4px 14px 20px}
+section{padding:12px 0;border-bottom:1px solid var(--line)}
+section:last-child{border-bottom:0}
+h3{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);font-weight:600}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.row+.row{margin-top:6px}
+.row>button{flex:1 1 auto}
+input[type=text],input[type=number]{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;width:100%}
+input[type=number]{width:72px}
+select{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit}
+input[type=range]{flex:1;accent-color:var(--accent2)}
+label.chk{display:flex;gap:8px;align-items:center;cursor:pointer;padding:2px 0}
+label.lbl{display:flex;gap:8px;align-items:center;color:var(--muted)}
+label.lbl span:first-child{min-width:104px}
+.pal{display:flex;flex-direction:column;gap:4px}
+.pal button{display:flex;align-items:center;gap:10px;text-align:left;padding:6px 9px}
+.pal button.on{border-color:var(--accent2);background:#26344a}
+.sw{width:18px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,.25);flex:none}
+.pal kbd,.hint kbd{margin-left:auto;font:11px ui-monospace,monospace;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+.shapes{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.shapes button{padding:6px 4px}
+.shapes button.on{border-color:var(--accent2);background:#26344a}
+.stats{display:grid;grid-template-columns:1fr auto;gap:4px 10px}
+.stats div:nth-child(odd){color:var(--muted)}
+.stats div:nth-child(even){text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.seglist{margin-top:8px;font-size:12px;color:var(--muted);display:grid;grid-template-columns:1fr auto;gap:2px 10px}
+.seglist span:nth-child(even){text-align:right;color:var(--text)}
+.note{color:var(--muted);font-size:12px;margin-top:6px}
+.up{color:var(--accent)} .bad{color:var(--danger)}
+#stage{flex:1;position:relative;min-width:0;background:#0b0d10}
+#cv{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}
+#cv.pan{cursor:grabbing}
+#banner{position:absolute;left:34px;top:34px;right:14px;pointer-events:none;display:flex}
+#banner div{background:rgba(20,24,30,.92);border:1px solid var(--line);border-left:4px solid var(--warn);padding:7px 12px;border-radius:6px;max-width:560px}
+#banner div.err{border-left-color:var(--danger)}
+#toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#0009;border:1px solid var(--line);backdrop-filter:blur(6px);padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:80%}
+#toast.show{opacity:1}
+footer{display:flex;gap:16px;padding:5px 14px;background:var(--panel);border-top:1px solid var(--line);color:var(--muted);font-size:12px;flex-wrap:wrap}
+footer .sp{flex:1}
+#drop{position:fixed;inset:0;background:rgba(90,169,255,.18);border:3px dashed var(--accent2);display:none;align-items:center;justify-content:center;font-size:22px;z-index:9;pointer-events:none}
+body.dragging #drop{display:flex}
+body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!important}
+@media (max-width:760px){main{flex-direction:column}aside{width:auto;max-height:42vh;border-right:0;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body data-mode="maze">
+<header>
+  <div class="brand">🏰 TD Maze Planer</div>
+  <div class="seg" id="modeSeg">
+    <button data-mode="map" data-en="① Draw map">① Map zeichnen</button>
+    <button data-mode="maze" class="on" data-en="② Draw maze">② Maze zeichnen</button>
+  </div>
+  <div class="sp"></div>
+  <div class="seg sm" id="langSeg" title="Sprache / Language">
+    <button data-lang="de">DE</button><button data-lang="en">EN</button>
+  </div>
+  <button id="btnUndo" title="Strg+Z" data-en-title="Ctrl+Z" data-en="↶ Undo">↶ Rückgängig</button>
+  <button id="btnRedo" title="Strg+Y" data-en-title="Ctrl+Y" data-en="↷ Redo">↷ Wiederholen</button>
+  <button id="btnFit" title="Pos1" data-en-title="Home" data-en="Fit view">Ansicht einpassen</button>
+</header>
+
+<main>
+<aside>
+  <button id="collapseAll" title="Alle Gruppen ein- oder ausklappen" data-en-title="Collapse or expand all groups">Alle einklappen</button>
+  <!-- ===== MAP-MODUS ===== -->
+  <section class="only-map">
+    <h3 data-en="Map">Karte</h3>
+    <div class="row"><input type="text" id="mapName" placeholder="Name der Karte" data-en-placeholder="Map name" maxlength="60"></div>
+    <div class="row">
+      <button id="btnNew" data-en="New">Neu</button>
+      <button id="btnSaveMap" class="primary" data-en="💾 Save">💾 Speichern</button>
+      <button id="btnLoadMap" data-en="📂 Load">📂 Laden</button>
+    </div>
+    <div class="row"><button id="btnSaveDefault" title="Speichert die aktuelle Karte als default-map.js. Liegt diese Datei neben der HTML-Datei, wird sie bei jedem Start geladen." data-en-title="Saves the current map as default-map.js. If this file sits next to the HTML file, it is loaded on every start." data-en="⭐ Save as start map">⭐ Als Startkarte speichern</button></div>
+    <div class="note" data-en="Saves as <b>.tdmap.json</b>. You load this file in maze mode. “Start map” saves <b>default-map.js</b> – put it in the folder of the HTML file and the tool always starts with this map.">Speichert als <b>.tdmap.json</b>. Diese Datei lädst du im Maze-Modus. „Startkarte“ speichert <b>default-map.js</b> – lege sie in den Ordner der HTML-Datei, dann startet das Tool immer mit dieser Karte.</div>
+    <div class="note dirBox" style="display:none"><span data-en="Dialogs open in:">Dialoge öffnen in:</span> <b class="dirName">–</b> <button class="pickDir" style="padding:1px 8px;font-size:12px" data-en="change">ändern</button></div>
+  </section>
+  <section class="only-maze">
+    <h3 data-en="Files">Dateien</h3>
+    <div class="note" style="margin:0 0 8px"><span data-en="Map:">Karte:</span> <b id="curMap">–</b></div>
+    <div class="row">
+      <button id="btnLoadMap2" class="primary" data-en="📂 Load map">📂 Karte laden</button>
+      <button id="btnLoadMaze" data-en="📂 Load maze">📂 Maze laden</button>
+    </div>
+    <div class="row">
+      <button id="btnSaveMaze" data-en="💾 Save maze">💾 Maze speichern</button>
+      <button id="btnPng" data-en="🖼 As PNG">🖼 Als PNG</button>
+    </div>
+    <div class="note dirBox" style="display:none"><span data-en="Dialogs open in:">Dialoge öffnen in:</span> <b class="dirName">–</b> <button class="pickDir" style="padding:1px 8px;font-size:12px" data-en="change">ändern</button></div>
+  </section>
+  <section>
+    <h3 data-en="Mirror map">Karte spiegeln</h3>
+    <div class="row">
+      <button id="btnMirrorH" title="Links und rechts vertauschen" data-en-title="Swap left and right" data-en="↔ Horizontal">↔ Horizontal</button>
+      <button id="btnMirrorV" title="Oben und unten vertauschen" data-en-title="Swap top and bottom" data-en="↕ Vertical">↕ Vertikal</button>
+    </div>
+    <div class="note only-maze" data-en="Towers are mirrored too.">Türme werden mitgespiegelt.</div>
+  </section>
+  <section class="only-map">
+    <h3 data-en="Grid (cells)">Raster (Felder)</h3>
+    <div class="row">
+      <input type="number" id="inW" min="5" max="300" value="30"> <span>×</span>
+      <input type="number" id="inH" min="5" max="300" value="20">
+      <button id="btnResize" data-en="Apply">Anwenden</button>
+    </div>
+    <div class="note" style="margin:10px 0 4px" data-en="Width changes on:">Breite ändert sich an:</div>
+    <div class="seg sm" id="segX" style="display:flex">
+      <button data-v="left" style="flex:1" data-en="Left">Links</button><button data-v="both" style="flex:1" data-en="Both sides">Beidseitig</button><button data-v="right" style="flex:1" data-en="Right">Rechts</button>
+    </div>
+    <div class="note" style="margin:8px 0 4px" data-en="Height changes on:">Höhe ändert sich an:</div>
+    <div class="seg sm" id="segY" style="display:flex">
+      <button data-v="top" style="flex:1" data-en="Top">Oben</button><button data-v="both" style="flex:1" data-en="Both sides">Beidseitig</button><button data-v="bottom" style="flex:1" data-en="Bottom">Unten</button>
+    </div>
+    <div class="note" data-en="The existing content stays on the opposite side. When shrinking, it is cut off where the change happens.">Der bisherige Inhalt bleibt auf der gegenüberliegenden Seite stehen. Beim Verkleinern wird dort abgeschnitten, wo die Änderung stattfindet.</div>
+  </section>
+  <section class="only-map">
+    <h3 data-en="Cell type">Feldtyp</h3>
+    <div class="pal" id="palette"></div>
+    <div class="note" data-en="Right click = reset cell to “Buildable”.">Rechtsklick = Feld zurück auf „Bebaubar“.</div>
+  </section>
+  <section class="only-maze">
+    <h3 data-en="Path formation parameters">Parameter Wegbildung</h3>
+    <label class="chk"><input type="checkbox" id="chkPrevent" checked> <span data-en="Prevent complete path blocking">Kompletten Wegblock verhindern</span></label>
+    <label class="lbl" style="margin-top:4px"><span style="min-width:0" data-en="Enemy movement">Gegner-Bewegung</span></label>
+    <select id="selMove">
+      <option value="any" data-en="Any angle (shortest path)">Beliebiger Winkel (kürzester Weg)</option>
+      <option value="eight" data-en="8 directions (45°)">8 Richtungen (45°)</option>
+      <option value="four" data-en="4 directions">4 Richtungen</option>
+    </select>
+    <div id="moveOpts">
+      <label class="lbl" style="margin-top:6px"><span id="wLbl" style="min-width:118px">Breite</span><input type="range" id="enemyW" min="30" max="100" step="5" value="50"></label>
+      <label class="lbl"><span id="mLbl" style="min-width:118px">Wandabstand</span><input type="range" id="margin" min="2" max="25" step="1" value="20"></label>
+      <div class="note" id="rNote"></div>
+    </div>
+  </section>
+  <section class="only-maze">
+    <h3 data-en="Tower size">Turmgröße</h3>
+    <div class="shapes" id="towers">
+      <button data-size="1" title="Taste 1" data-en-title="Key 1"><i class="sw2" style="background:#e9d758"></i>1×1</button>
+      <button data-size="2" title="Taste 2" data-en-title="Key 2"><i class="sw2" style="background:#ff8a5c"></i>2×2</button>
+      <button data-size="4" title="Taste 4" data-en-title="Key 4"><i class="sw2" style="background:#b58cff"></i>4×4</button>
+    </div>
+    <div class="note" data-en="Click or drag = place towers along a line, right click = remove whole tower. Towers are always placed completely or not at all.">Klicken oder Ziehen = Türme entlang einer Linie setzen, Rechtsklick = ganzen Turm entfernen. Türme werden immer komplett oder gar nicht gesetzt.</div>
+    <div class="row" style="margin-top:10px"><button id="btnClearWalls" class="danger" data-en="Delete all towers">Alle Türme löschen</button></div>
+  </section>
+  <section class="only-map">
+    <h3 data-en="Guide lines">Hilfslinien</h3>
+    <div class="row"><button id="btnGuideTool" data-en="✏ Draw guide line (H)">✏ Hilfslinie zeichnen (H)</button></div>
+    <div class="note" data-en="Dragging draws horizontal, vertical or diagonal (45°) lines. Snap points lie on the double grid (also cell centers and edge midpoints). Right click on a line deletes it. The lines are saved with the map.">Ziehen zeichnet waagerecht, senkrecht oder diagonal (45°). Die Anfasspunkte liegen im doppelten Raster (auch Feldmitten und Kantenmitten). Rechtsklick auf eine Linie löscht sie. Die Linien werden mit der Karte gespeichert.</div>
+    <div class="row" style="margin-top:8px"><button id="btnClearGuides" class="danger" data-en="Delete all guide lines">Alle Hilfslinien löschen</button></div>
+  </section>
+  <section>
+    <h3 data-en="Display">Anzeige</h3>
+    <label class="chk only-maze"><input type="checkbox" id="chkPath" checked> <span data-en="Show path">Weg anzeigen</span> <kbd style="margin-left:auto;font:11px monospace;color:#8b93a3">P</kbd></label>
+    <label class="chk"><input type="checkbox" id="chkGuides" checked> <span data-en="Show guide lines">Hilfslinien anzeigen</span></label>
+    <label class="chk only-maze"><input type="checkbox" id="chkSim"> <span data-en="Enemy simulation">Gegner-Simulation</span></label>
+    <div class="note" data-en="Mouse wheel = zoom · Middle mouse button or Space + drag = pan">Mausrad = Zoom · Mittlere Maustaste oder Leertaste + Ziehen = Verschieben</div>
+  </section>
+  <section class="only-maze">
+    <h3 data-en="Statistics">Statistik</h3>
+    <div class="stats">
+      <div data-en='<i class="sw2" style="background:#e9d758"></i>Towers 1×1'><i class="sw2" style="background:#e9d758"></i>Türme 1×1</div><div id="sT1">0</div>
+      <div data-en='<i class="sw2" style="background:#ff8a5c"></i>Towers 2×2'><i class="sw2" style="background:#ff8a5c"></i>Türme 2×2</div><div id="sT2">0</div>
+      <div data-en='<i class="sw2" style="background:#b58cff"></i>Towers 4×4'><i class="sw2" style="background:#b58cff"></i>Türme 4×4</div><div id="sT4">0</div>
+      <div data-en="Towers total">Türme gesamt</div><div id="sTowers">0</div>
+      <div data-en="Path length">Weglänge</div><div id="sLen">–</div>
+      <div data-en="Without maze">Ohne Maze</div><div id="sBase">–</div>
+      <div data-en="Increase">Verlängerung</div><div id="sGain">–</div>
+    </div>
+    <div class="seglist" id="segList"></div>
+  </section>
+</aside>
+
+<div id="stage">
+  <canvas id="cv"></canvas>
+  <div id="banner"></div>
+  <div id="toast"></div>
+</div>
+</main>
+
+<footer>
+  <span id="stPos">–</span>
+  <span class="sp"></span>
+  <span id="stKeys"></span>
+</footer>
+<div id="drop" data-en="Drop file here (.tdmap.json / .tdmaze.json)">Datei hier ablegen (.tdmap.json / .tdmaze.json)</div>
+<input type="file" id="fMap" accept=".json,application/json" hidden>
+<input type="file" id="fMaze" accept=".json,application/json" hidden>
+
+<!-- Startkarte: liegt "default-map.js" im selben Ordner, wird sie beim Start geladen (fehlt sie, passiert nichts) -->
+<script src="default-map.js"></script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ---------- Sprache (DE / EN) ----------
+   Statische Texte: Deutsch steht im HTML, die englische Fassung im Attribut data-en (bzw. data-en-title / data-en-placeholder).
+   Dynamische Texte laufen über t(): der deutsche Text ist der Schlüssel, EN enthält die Übersetzung. {0}, {1} = Platzhalter. */
+const EN = {
+  'Neue Karte':'New map', 'Karte':'Map',
+  'Bebaubar':'Buildable', 'Blockiert':'Blocked', 'Fester Weg':'Fixed path', 'Start':'Start', 'Ziel':'Goal', 'Checkpoint':'Checkpoint', 'Turm':'Tower',
+  'Hier dürfen Türme stehen':'Towers may be placed here',
+  'Nicht begehbar, nicht bebaubar (Fels, Wasser …)':'Not walkable, not buildable (rock, water …)',
+  'Begehbar, aber nicht bebaubar':'Walkable but not buildable',
+  'Startpunkt der Gegner. Mehrere möglich, nochmal klicken entfernt.':'Enemy start point. Several allowed, click again to remove.',
+  'Zielpunkt der Gegner. Mehrere möglich, nochmal klicken entfernt.':'Enemy goal point. Several allowed, click again to remove.',
+  'Reihenfolge = Setz-Reihenfolge. Nochmal klicken entfernt.':'Order = order of placement. Click again to remove.',
+  'Z':'G',
+  'Breite: {0}':'Width: {0}', 'Wandabstand: {0}':'Wall gap: {0}',
+  'Ziehen: Fläche zeichnen · Rechtsklick: zurücksetzen · 1–6: Feldtyp · H: Hilfslinie':'Drag: draw area · Right click: reset · 1–6: cell type · H: guide line',
+  'Klicken/Ziehen: Türme setzen · Rechtsklick: entfernen · 1/2/4: Turmgröße · P: Weg':'Click/drag: place towers · Right click: remove · 1/2/4: tower size · P: path',
+  'Spalte {0} · Zeile {1} · {2}':'Column {0} · Row {1} · {2}',
+  'Alle einklappen':'Collapse all', 'Alle ausklappen':'Expand all',
+  'noch nicht festgelegt':'not set yet', 'Standard':'default',
+  'Kürzester Weg':'Shortest path', 'Alle Starts':'All starts', 'allen Zielen':'any goal',
+  'Setze im Map-Modus mindestens einen Start und ein Ziel, damit ein Weg berechnet werden kann.':'In map mode, place at least one start and one goal so a path can be calculated.',
+  'Weg blockiert: Ein Start, Checkpoint oder Ziel liegt in einer gesperrten Fläche.':'Path blocked: a start, checkpoint or goal lies in a blocked area.',
+  'Weg blockiert: {0} → {1} ist nicht erreichbar.':'Path blocked: {0} → {1} is unreachable.',
+  'Nicht möglich: {0} würde kein Ziel mehr erreichen.':'Not possible: {0} would no longer reach a goal.',
+  'Nicht möglich: der Weg würde komplett versperrt.':'Not possible: the path would be completely blocked.',
+  'Kein Weg zu einem Ziel: {0}':'No path to a goal: {0}',
+  'Tipp: Setze mindestens einen <b>Start</b> und ein <b>Ziel</b> (mehrere möglich, optional Checkpoints), damit im Maze-Modus ein Weg berechnet wird.':'Tip: place at least one <b>start</b> and one <b>goal</b> (several allowed, checkpoints optional) so a path is calculated in maze mode.',
+  'Karte horizontal gespiegelt.':'Map mirrored horizontally.', 'Karte vertikal gespiegelt.':'Map mirrored vertically.',
+  'Ungültige Datei.':'Invalid file.', 'Ungültige Rastergröße.':'Invalid grid size.', 'Kartendaten beschädigt.':'Map data corrupted.',
+  'Maze-Daten beschädigt.':'Maze data corrupted.', 'Das ist keine TD-Map/Maze-Datei.':'This is not a TD map/maze file.',
+  'Fehler: {0}':'Error: {0}', '„{0}“ geladen.':'“{0}” loaded.',
+  'Startkarte „{0}“ geladen.':'Start map “{0}” loaded.', 'Startkarte fehlerhaft: {0}':'Start map is faulty: {0}',
+  'Einmalig: Bitte diese HTML-Datei auswählen – Laden/Speichern öffnet danach immer in ihrem Ordner.':'One-time step: please select this HTML file – load/save dialogs will then always open in its folder.',
+  'Ordner gemerkt. Bitte jetzt noch einmal klicken.':'Folder remembered. Please click once more.',
+  'Ohne Ordner: Dialoge öffnen am Standardort. Bitte noch einmal klicken.':'Without folder: dialogs open at the default location. Please click once more.',
+  'Ordner gemerkt.':'Folder remembered.',
+  'PNG exportiert.':'PNG exported.', 'Karte gespeichert.':'Map saved.', 'Maze gespeichert.':'Maze saved.',
+  'Startkarte gespeichert – sie muss als „default-map.js“ neben der HTML-Datei liegen.':'Start map saved – it must be named “default-map.js” and sit next to the HTML file.',
+  'Neue leere Karte anlegen? Die aktuelle Karte geht verloren, sofern nicht gespeichert.':'Create a new empty map? The current map will be lost unless saved.',
+  'Diese HTML-Datei':'This HTML file', 'TD-Dateien (.json)':'TD files (.json)', 'PNG-Bild':'PNG image', 'TD-Karte':'TD map', 'TD-Maze':'TD maze',
+  'Startkarte (default-map.js)':'Start map (default-map.js)',
+  'Abstand Gegnermitte–Wand: {0} Felder':'Distance enemy center to wall: {0} cells', ' (max. 0,5)':' (max. 0.5)',
+  '. Engere Lücken sind nicht passierbar.':'. Narrower gaps cannot be passed.',
+};
+let lang = 'de';
+try{ if (localStorage.getItem('tdplaner.lang') === 'en') lang = 'en'; } catch (e){}
+const t = (s, ...a) => (lang === 'en' && EN[s] || s).replace(/\{(\d)\}/g, (_, i) => a[i]);
+const dsep = s => lang === 'de' ? String(s).replace('.', ',') : String(s);          // Dezimaltrenner je Sprache
+function applyStaticI18n(){
+  document.querySelectorAll('[data-en]').forEach(el => {
+    if (el.__de === undefined) el.__de = el.innerHTML;
+    el.innerHTML = lang === 'en' ? el.dataset.en : el.__de;
+  });
+  for (const attr of ['title', 'placeholder']){
+    const ds = 'en' + attr[0].toUpperCase() + attr.slice(1);
+    document.querySelectorAll('[data-en-' + attr + ']').forEach(el => {
+      const k = '__de_' + attr;
+      if (el[k] === undefined) el[k] = el.getAttribute(attr);
+      el.setAttribute(attr, lang === 'en' ? el.dataset[ds] : el[k]);
+    });
+  }
+  document.documentElement.lang = lang;
+  document.querySelectorAll('#langSeg button').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
+}
+const FREE = 0, BLOCK = 1, PATH = 2;
+const C = { free:'#34503a', block:'#0c0e11', path:'#a58348', wall:'#aeb8cc', route:'#3ddbd9',
+            start:'#4cc38a', goal:'#ff6b6b', cp:'#5aa9ff' };
+const RUL = 22;                       // Lineal-Breite in px
+
+/* ---------- Zustand ---------- */
+const TILES = [
+  { id:'free',  key:'1', name:'Bebaubar',   hint:'Hier dürfen Türme stehen',              color:C.free },
+  { id:'block', key:'2', name:'Blockiert',  hint:'Nicht begehbar, nicht bebaubar (Fels, Wasser …)', color:C.block },
+  { id:'path',  key:'3', name:'Fester Weg', hint:'Begehbar, aber nicht bebaubar',         color:C.path },
+  { id:'start', key:'4', name:'Start',      hint:'Startpunkt der Gegner. Mehrere möglich, nochmal klicken entfernt.', color:C.start },
+  { id:'goal',  key:'5', name:'Ziel',       hint:'Zielpunkt der Gegner. Mehrere möglich, nochmal klicken entfernt.',  color:C.goal },
+  { id:'cp',    key:'6', name:'Checkpoint', hint:'Reihenfolge = Setz-Reihenfolge. Nochmal klicken entfernt.', color:C.cp },
+];
+const settings = { tile:'block', shape:'line', brush:1, tower:2, move:'any', enemyW:.5, margin:.2, prevent:true, grid:true, showPath:true,
+                   sim:false, showGuides:true, resizeX:'right', resizeY:'bottom' };
+let guides = [];                     // Hilfslinien {x1,y1,x2,y2} in Feldeinheiten (Vielfache von 0,5)
+let mode = 'maze';                   // das Tool startet immer im Reiter „Maze zeichnen“
+let map = newMap(30, 20, t('Neue Karte'));
+let walls = new Uint32Array(map.w * map.h);   // 0 = frei, sonst Turm-ID
+let nextId = 1;
+const towerSize = new Map();          // Turm-ID -> Größe (1, 2, 4)
+const TOWER_COL = { 1:'#e9d758', 2:'#ff8a5c', 4:'#b58cff' };   // Farbe je Turmgröße
+let route = null, baseRoute = null, pathMask = new Uint8Array(0);
+let history = [], future = [];
+
+function newMap(w, h, name){
+  return { name:name||t('Neue Karte'), w, h, cells:new Uint8Array(w*h), starts:[], goals:[], cps:[] };
+}
+const idx = (x, y) => y * map.w + x;
+
+/* ---------- Marker (mehrere Starts und Ziele möglich) ---------- */
+const MK = { start:'starts', goal:'goals', cp:'cps' };
+function markerAt(x, y){                          // -> { kind, i } oder null
+  for (const kind of ['start', 'goal', 'cp']){
+    const i = map[MK[kind]].findIndex(p => p.x===x && p.y===y);
+    if (i >= 0) return { kind, i };
+  }
+  return null;
+}
+function removeMarkerAt(x, y){
+  const m = markerAt(x, y);
+  if (!m) return false;
+  map[MK[m.kind]].splice(m.i, 1);
+  return true;
+}
+function placeMarker(kind, x, y){
+  const had = markerAt(x, y);
+  removeMarkerAt(x, y);
+  if (had && had.kind === kind) return true;     // nochmal klicken entfernt den Punkt
+  map.cells[idx(x, y)] = PATH;
+  walls[idx(x, y)] = 0;
+  map[MK[kind]].push({ x, y });
+  return true;
+}
+function paintTerrain(x, y, type){
+  const i = idx(x, y); let ch = false;
+  if (map.cells[i] !== type) { map.cells[i] = type; ch = true; }
+  if (type !== PATH && removeMarkerAt(x, y)) ch = true;
+  return ch;
+}
+function sanitizeWalls(){
+  const bad = new Set();
+  for (let i = 0; i < walls.length; i++) if (walls[i] && map.cells[i] !== FREE) bad.add(walls[i]);
+  if (bad.size) for (let i = 0; i < walls.length; i++) if (bad.has(walls[i])) walls[i] = 0;
+}
+
+/* ---------- Wegfindung ---------- */
+class Heap{
+  constructor(){ this.k=[]; this.v=[]; this.key=0; }
+  get size(){ return this.v.length; }
+  push(k, v){
+    const K=this.k, V=this.v; let i=K.length; K.push(k); V.push(v);
+    while (i > 0){ const p=(i-1)>>1; if (K[p] <= k) break; K[i]=K[p]; V[i]=V[p]; i=p; }
+    K[i]=k; V[i]=v;
+  }
+  pop(){
+    const K=this.k, V=this.v, rv=V[0]; this.key=K[0];
+    const lk=K.pop(), lv=V.pop(), n=K.length;
+    if (n > 0){
+      let i=0;
+      for(;;){ let c=2*i+1; if (c>=n) break; if (c+1<n && K[c+1]<K[c]) c++; if (K[c]>=lk) break; K[i]=K[c]; V[i]=V[c]; i=c; }
+      K[i]=lk; V[i]=lv;
+    }
+    return rv;
+  }
+}
+let dist = new Float64Array(0), prev = new Int32Array(0);
+function shortest(a, b, useWalls){
+  const w = map.w, h = map.h, n = w*h, cells = map.cells;
+  if (dist.length !== n){ dist = new Float64Array(n); prev = new Int32Array(n); }
+  dist.fill(Infinity);
+  const ok = i => cells[i] !== BLOCK && !(useWalls && walls[i]);
+  if (!ok(a) || !ok(b)) return null;
+  const heap = new Heap(); dist[a] = 0; prev[a] = -1; heap.push(0, a);
+  const diag = settings.move === 'eight';
+  while (heap.size){
+    const u = heap.pop(), d = heap.key;
+    if (d > dist[u]) continue;
+    if (u === b) break;
+    const ux = u % w, uy = (u / w) | 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){
+      if (!dx && !dy) continue;
+      const isDiag = dx && dy;
+      if (isDiag && !diag) continue;
+      const vx = ux+dx, vy = uy+dy;
+      if (vx<0 || vy<0 || vx>=w || vy>=h) continue;
+      const v = vy*w+vx;
+      if (!ok(v)) continue;
+      if (isDiag && (!ok(uy*w+vx) || !ok(vy*w+ux))) continue;   // keine Ecken schneiden
+      const nd = d + (isDiag ? Math.SQRT2 : 1);
+      if (nd < dist[v]){ dist[v] = nd; prev[v] = u; heap.push(nd, v); }
+    }
+  }
+  if (dist[b] === Infinity) return null;
+  const out = []; for (let i = b; i !== -1; i = prev[i]) out.push(i);
+  return { cells: out.reverse(), len: dist[b] };
+}
+/* ---------- Beliebiger Winkel: exakter kürzester Weg (Sichtbarkeitsgraph + A*) ----------
+   Gegner sind Punkte. Der Weg knickt nur an Hindernis-Ecken ab. Wände dürfen gestreift, aber nicht
+   durchquert werden; zwischen zwei diagonal aneinanderstoßenden Hindernissen gibt es kein Durchkommen. */
+const EPS = 1e-9;
+let losWalls = true;
+const isBlk = (x, y) => x < 0 || y < 0 || x >= map.w || y >= map.h || map.cells[y*map.w+x] === BLOCK || (losWalls && walls[y*map.w+x] !== 0);
+const checker = (vx, vy) => {
+  const a = isBlk(vx-1,vy-1), b = isBlk(vx,vy-1), c = isBlk(vx-1,vy), d = isBlk(vx,vy);
+  return (a && d && !b && !c) || (b && c && !a && !d);
+};
+let curR = 0;                                                // Abstand Gegnermitte – Wand (0 = Punkt)
+const clearR = () => settings.move === 'any' ? Math.min(.5, settings.enemyW/2 + settings.margin) : 0;
+function segRectDist(ax, ay, bx, by, x0, y0, x1, y1){       // Abstand Strecke – Rechteck
+  const dx = bx-ax, dy = by-ay; let t0 = 0, t1 = 1;
+  const clip = (p, q) => {
+    if (p === 0) return q >= 0;
+    const t = q/p;
+    if (p < 0){ if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; }
+    return true;
+  };
+  if (clip(-dx, ax-x0) && clip(dx, x1-ax) && clip(-dy, ay-y0) && clip(dy, y1-ay)) return 0;
+  const pr = (px, py) => Math.hypot(Math.max(x0-px, 0, px-x1), Math.max(y0-py, 0, py-y1));
+  const l2 = dx*dx + dy*dy;
+  const ps = (px, py) => { const t = l2 ? clamp(((px-ax)*dx + (py-ay)*dy)/l2, 0, 1) : 0; return Math.hypot(px-(ax+t*dx), py-(ay+t*dy)); };
+  return Math.min(pr(ax, ay), pr(bx, by), ps(x0, y0), ps(x1, y0), ps(x0, y1), ps(x1, y1));
+}
+function losR(ax, ay, bx, by, R){                            // Strecke hält überall mind. R Abstand zu allen Hindernissen
+  const xmin = Math.min(ax,bx), xmax = Math.max(ax,bx), vert = ax === bx, slope = vert ? 0 : (by-ay)/(bx-ax);
+  const yAt = x => vert ? ay : ay + (x-ax)*slope;
+  for (let cx = Math.floor(xmin-R-EPS); cx <= Math.floor(xmax+R+EPS); cx++){
+    const xa = Math.max(cx-R, xmin), xb = Math.min(cx+1+R, xmax);
+    if (xa > xb) continue;
+    const ya = vert ? Math.min(ay,by) : yAt(xa), yb = vert ? Math.max(ay,by) : yAt(xb);
+    const lo = Math.min(ya,yb), hi = Math.max(ya,yb);
+    for (let r = Math.floor(lo-R-EPS); r <= Math.floor(hi+R+EPS); r++)
+      if (isBlk(cx, r) && segRectDist(ax, ay, bx, by, cx, r, cx+1, r+1) < R-EPS) return false;
+  }
+  return true;
+}
+function los(ax, ay, bx, by){
+  if (curR > 0) return losR(ax, ay, bx, by, curR);
+  if (ax === bx && ay === by) return true;
+  const xmin = Math.min(ax,bx), xmax = Math.max(ax,bx), ymin = Math.min(ay,by), ymax = Math.max(ay,by);
+  if (ax === bx){                                            // senkrecht
+    const onLine = Number.isInteger(ax), cx = Math.floor(ax);
+    for (let r = Math.floor(ymin+EPS); r < Math.ceil(ymax-EPS); r++){
+      if (onLine ? (isBlk(ax-1, r) && isBlk(ax, r)) : isBlk(cx, r)) return false;
+    }
+    if (onLine) for (let y = Math.floor(ymin)+1; y < ymax; y++) if (checker(ax, y)) return false;
+    return true;
+  }
+  const slope = (by-ay)/(bx-ax), yAt = x => ay + (x-ax)*slope;
+  for (let cx = Math.floor(xmin+EPS); cx < Math.ceil(xmax-EPS); cx++){
+    const xa = Math.max(cx, xmin), xb = Math.min(cx+1, xmax), ya = yAt(xa), yb = yAt(xb);
+    const lo = Math.min(ya,yb), hi = Math.max(ya,yb);
+    if (hi-lo < EPS){                                        // waagerecht innerhalb des Streifens
+      if (Math.abs(lo-Math.round(lo)) < EPS){ const r = Math.round(lo); if (isBlk(cx, r-1) && isBlk(cx, r)) return false; }
+      else if (isBlk(cx, Math.floor(lo))) return false;
+    } else for (let r = Math.floor(lo+EPS); r < Math.ceil(hi-EPS); r++) if (isBlk(cx, r)) return false;
+  }
+  for (let x = Math.floor(xmin)+1; x < xmax; x++){           // Durchgang durch Schachbrett-Ecken verbieten
+    const y = yAt(x);
+    if (Math.abs(y-Math.round(y)) < EPS && checker(x, Math.round(y))) return false;
+  }
+  return true;
+}
+function findCorners(){                                      // konvexe Hindernis-Ecken (genau 1 von 4 Feldern blockiert)
+  const out = [], R = curR, Rv = R / Math.cos(Math.PI/8);   // Ecken werden mit Abstand R zu einem Polygon abgerundet
+  for (let vy = 0; vy <= map.h; vy++) for (let vx = 0; vx <= map.w; vx++){
+    const ul = isBlk(vx-1,vy-1), ur = isBlk(vx,vy-1), dl = isBlk(vx-1,vy), dr = isBlk(vx,vy);
+    if ((ul?1:0) + (ur?1:0) + (dl?1:0) + (dr?1:0) !== 1) continue;
+    if (R <= 0){ out.push({ x:vx, y:vy }); continue; }
+    const sx = ul || dl ? 1 : -1, sy = ul || ur ? 1 : -1;   // Richtung weg vom blockierten Feld
+    for (const al of [Math.PI/8, 3*Math.PI/8]){
+      const x = vx + sx*Rv*Math.cos(al), y = vy + sy*Rv*Math.sin(al);
+      if (losR(x, y, x, y, R)) out.push({ x, y });
+    }
+  }
+  return out;
+}
+function anyLeg(a, b, corners){
+  const dd = (p, q) => Math.hypot(p.x-q.x, p.y-q.y);
+  if (los(a.x, a.y, b.x, b.y)) return { pts:[a, b], len:dd(a, b) };
+  const N = corners.length, G = N;
+  const g = new Float64Array(N+1).fill(Infinity), prevN = new Int32Array(N+1).fill(-2), closed = new Uint8Array(N+1);
+  const heap = new Heap();
+  for (let i = 0; i < N; i++){
+    const c = corners[i];
+    if (los(a.x, a.y, c.x, c.y)){ g[i] = dd(a, c); prevN[i] = -1; heap.push(g[i] + dd(c, b), i); }
+  }
+  while (heap.size){
+    const u = heap.pop();
+    if (closed[u]) continue;
+    closed[u] = 1; if (u === G) break;
+    const pu = corners[u];
+    let nd = g[u] + dd(pu, b);
+    if (nd < g[G]-EPS && los(pu.x, pu.y, b.x, b.y)){ g[G] = nd; prevN[G] = u; heap.push(nd, G); }
+    for (let v = 0; v < N; v++){
+      if (closed[v]) continue;
+      const pv = corners[v]; nd = g[u] + dd(pu, pv);
+      if (nd < g[v]-EPS && los(pu.x, pu.y, pv.x, pv.y)){ g[v] = nd; prevN[v] = u; heap.push(nd + dd(pv, b), v); }
+    }
+  }
+  if (g[G] === Infinity) return null;
+  const pts = [b]; let i = G;
+  while (prevN[i] >= 0){ i = prevN[i]; pts.push(corners[i]); }
+  pts.push(a);
+  return { pts:pts.reverse(), len:g[G] };
+}
+function touchedCells(pts){                                  // alle Felder, die der Weg (mit Abstand curR) berührt
+  const w = map.w, h = map.h, mask = new Uint8Array(w*h), out = [], R = curR;
+  const add = (x, y) => { if (x < 0 || y < 0 || x >= w || y >= h) return; const i = y*w+x; if (!mask[i]){ mask[i] = 1; out.push(i); } };
+  for (let k = 1; k < pts.length; k++){
+    const ax = pts[k-1].x, ay = pts[k-1].y, bx = pts[k].x, by = pts[k].y;
+    const xmin = Math.min(ax,bx), xmax = Math.max(ax,bx), slope = ax === bx ? 0 : (by-ay)/(bx-ax);
+    for (let cx = Math.floor(xmin-R-EPS); cx <= Math.floor(xmax+R+EPS); cx++){
+      const xa = Math.max(cx-R, xmin), xb = Math.min(cx+1+R, xmax);
+      if (xa > xb) continue;
+      let ya, yb;
+      if (ax === bx){ ya = Math.min(ay,by); yb = Math.max(ay,by); }
+      else { ya = ay + (xa-ax)*slope; yb = ay + (xb-ax)*slope; }
+      const lo = Math.min(ya,yb), hi = Math.max(ya,yb);
+      for (let r = Math.floor(lo-R-EPS); r <= Math.floor(hi+R+EPS); r++) add(cx, r);
+    }
+  }
+  return out;
+}
+function computeRoute(useWalls){
+  if (!map.starts.length || !map.goals.length)
+    return { ok:false, missing:true, msg:t('Setze im Map-Modus mindestens einen Start und ein Ziel, damit ein Weg berechnet werden kann.') };
+  const any = settings.move === 'any', w = map.w;
+  let corners = null;
+  if (any){
+    losWalls = useWalls; curR = clearR();
+    if ([...map.starts, ...map.cps, ...map.goals].some(p => isBlk(p.x, p.y)))
+      return { ok:false, msg:t('Weg blockiert: Ein Start, Checkpoint oder Ziel liegt in einer gesperrten Fläche.') };
+    corners = findCorners();
+  }
+  const cache = new Map();                                     // Teilstrecken zwischen gleichen Punkten nur einmal berechnen
+  const leg = (a, b) => {
+    const key = a.x+','+a.y+'>'+b.x+','+b.y;
+    if (cache.has(key)) return cache.get(key);
+    let r;
+    if (any) r = anyLeg({ x:a.x+.5, y:a.y+.5 }, { x:b.x+.5, y:b.y+.5 }, corners);
+    else { const s = shortest(idx(a.x,a.y), idx(b.x,b.y), useWalls); r = s && { cells:s.cells, len:s.len, pts:s.cells.map(i => ({ x:(i % w)+.5, y:((i / w) | 0)+.5 })) }; }
+    cache.set(key, r); return r;
+  };
+  const sName = i => map.starts.length > 1 ? 'S'+(i+1) : t('Start'), gName = i => map.goals.length > 1 ? t('Z')+(i+1) : t('Ziel');
+  const blocked = (a, b) => ({ ok:false, msg:t('Weg blockiert: {0} → {1} ist nicht erreichbar.', a, b) });
+  // Alle Kombinationen Start → (Checkpoints) → Ziel prüfen; gezeichnet wird nur der eine kürzeste Weg,
+  // aber jeder Start muss irgendein Ziel erreichen können (sonst steht er in "unreachable")
+  let bestRoute = null, firstFail = null;
+  const all = [], unreachable = [];
+  for (let si = 0; si < map.starts.length; si++){
+    let pts = [], cells = [], segs = [], total = 0, cur = map.starts[si], curName = sName(si), fail = null;
+    const add = (r, label) => {
+      pts = pts.concat(pts.length ? r.pts.slice(1) : r.pts);
+      if (!any) cells = cells.concat(cells.length ? r.cells.slice(1) : r.cells);
+      segs.push({ label, len:r.len }); total += r.len;
+    };
+    for (let k = 0; k < map.cps.length && !fail; k++){
+      const r = leg(cur, map.cps[k]), nm = 'CP' + (k+1);
+      if (!r) fail = blocked(curName, nm); else { add(r, `${curName} → ${nm}`); cur = map.cps[k]; curName = nm; }
+    }
+    if (!fail){
+      let best = null, bg = -1;
+      map.goals.forEach((g, gi) => { const r = leg(cur, g); if (r && (!best || r.len < best.len)){ best = r; bg = gi; } });
+      if (!best) fail = blocked(curName, map.goals.length > 1 ? t('allen Zielen') : t('Ziel'));
+      else {
+        add(best, `${curName} → ${gName(bg)}`);
+        if (any) cells = touchedCells(pts);
+        const cum = new Float64Array(pts.length);
+        for (let i = 1; i < pts.length; i++) cum[i] = cum[i-1] + Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y);
+        const rt = { si, gi:bg, pts, cells, len:total, segs, cum, label:`${sName(si)} → ${gName(bg)}` };
+        all.push(rt);
+        if (!bestRoute || total < bestRoute.len - EPS) bestRoute = rt;
+      }
+    }
+    if (fail){ unreachable.push({ si, name:sName(si), msg:fail.msg }); if (!firstFail) firstFail = fail; }
+  }
+  if (!bestRoute) return firstFail;
+  const union = new Set(); for (const r of all) for (const i of r.cells) union.add(i);   // alle Felder, die einen Start-Weg beeinflussen
+  return { ok:true, routes:[bestRoute], cells:[...union], len:bestRoute.len, unreachable };
+}
+let baseCache = null;
+function recompute(){
+  if (mode === 'maze'){
+    route = computeRoute(true);
+    // Weg ohne Türme hängt nur von der Karte ab und wird zwischengespeichert
+    let hsh = 0; for (let i = 0; i < map.cells.length; i++) hsh = (hsh*31 + map.cells[i] + 1) | 0;
+    const key = [settings.move, settings.enemyW, settings.margin, map.w, map.h, JSON.stringify(map.starts), JSON.stringify(map.goals), JSON.stringify(map.cps), hsh].join('|');
+    if (!baseCache || baseCache.key !== key) baseCache = { key, route:computeRoute(false) };
+    baseRoute = baseCache.route;
+  } else { route = null; baseRoute = null; }
+  pathMask = new Uint8Array(map.w * map.h);
+  if (route && route.ok) for (const i of route.cells) pathMask[i] = 1;
+  updateStats(); updateBanner(); dirty = true;
+}
+
+/* ---------- Zeichenoperationen ---------- */
+function stampCells(c, n){
+  const off = (n-1) >> 1, out = [];
+  for (let dy = 0; dy < n; dy++) for (let dx = 0; dx < n; dx++){
+    const x = c.x-off+dx, y = c.y-off+dy;
+    if (x>=0 && y>=0 && x<map.w && y<map.h) out.push(idx(x,y));
+  }
+  return out;
+}
+function bresenham(a, b){
+  const pts = []; let x=a.x, y=a.y; const dx=Math.abs(b.x-a.x), dy=-Math.abs(b.y-a.y), sx=a.x<b.x?1:-1, sy=a.y<b.y?1:-1;
+  let err = dx+dy;
+  for(;;){
+    pts.push({x,y}); if (x===b.x && y===b.y) break;
+    const e2 = 2*err; if (e2>=dy){ err+=dy; x+=sx; } if (e2<=dx){ err+=dx; y+=sy; }
+  }
+  return pts;
+}
+function shapeCells(shape, a, b, n){
+  const set = new Set();
+  if (shape === 'line'){
+    for (const p of bresenham(a, b)) for (const i of stampCells(p, n)) set.add(i);
+  } else {
+    const x0=Math.min(a.x,b.x), x1=Math.max(a.x,b.x), y0=Math.min(a.y,b.y), y1=Math.max(a.y,b.y);
+    for (let y=y0; y<=y1; y++) for (let x=x0; x<=x1; x++)
+      if (shape==='rect' || x===x0 || x===x1 || y===y0 || y===y1) set.add(idx(x,y));
+  }
+  return [...set];
+}
+let lastBlockToast = 0;
+function applyCells(list, erase){
+  let ch = false;
+  if (mode === 'map'){
+    const type = erase ? FREE : (settings.tile==='block' ? BLOCK : settings.tile==='path' ? PATH : FREE);
+    for (const i of list) if (paintTerrain(i % map.w, (i / map.w) | 0, type)) ch = true;
+    return ch;
+  }
+  // Maze-Modus, Entfernen: getroffene Türme werden komplett gelöscht
+  const ids = new Set();
+  for (const i of list) if (walls[i]) ids.add(walls[i]);
+  if (!ids.size) return false;
+  for (let i = 0; i < walls.length; i++) if (ids.has(walls[i])) walls[i] = 0;
+  return true;
+}
+/* Türme: jeder "Stempel" ist ein Array von Zell-Indizes (n×n) und wird ganz oder gar nicht gesetzt */
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+function stampIdx(x, y, n){
+  x = clamp(x, 0, map.w-n); y = clamp(y, 0, map.h-n);
+  const out = [];
+  for (let dy = 0; dy < n; dy++) for (let dx = 0; dx < n; dx++) out.push(idx(x+dx, y+dy));
+  return out;
+}
+const towerOrigin = (c, n) => ({ x:clamp(c.x-((n-1)>>1), 0, map.w-n), y:clamp(c.y-((n-1)>>1), 0, map.h-n) });
+function mazeStamps(shape, a, b){
+  const n = settings.tower;
+  if (shape === 'brush'){ const o = towerOrigin(a, n); return [stampIdx(o.x, o.y, n)]; }
+  if (shape === 'line'){
+    const used = new Set(), out = [];
+    for (const p of bresenham(a, b)){
+      const o = towerOrigin(p, n), s = stampIdx(o.x, o.y, n);
+      if (s.some(i => used.has(i))) continue;
+      s.forEach(i => used.add(i)); out.push(s);
+    }
+    return out;
+  }
+  const x0 = Math.min(a.x,b.x), x1 = Math.max(a.x,b.x), y0 = Math.min(a.y,b.y), y1 = Math.max(a.y,b.y);
+  const nx = Math.max(1, Math.floor((x1-x0+1)/n)), ny = Math.max(1, Math.floor((y1-y0+1)/n)), out = [];
+  for (let ty = 0; ty < ny; ty++) for (let tx = 0; tx < nx; tx++)
+    if (shape === 'rect' || tx === 0 || ty === 0 || tx === nx-1 || ty === ny-1) out.push(stampIdx(x0+tx*n, y0+ty*n, n));
+  return out;
+}
+function applyTowers(stamps){
+  let ch = false;
+  for (const s of stamps){
+    if (s.some(i => walls[i] || map.cells[i] !== FREE)) continue;
+    const id = nextId++;
+    towerSize.set(id, settings.tower);
+    for (const i of s) walls[i] = id;
+    if (settings.prevent && s.some(i => pathMask[i])){
+      const r = computeRoute(true);
+      // jeder Start muss weiterhin irgendein Ziel erreichen (Starts, die schon vorher blockiert waren, zählen nicht)
+      const was = new Set((route && route.ok ? route.unreachable : []).map(u => u.si));
+      const cut = r.ok ? r.unreachable.filter(u => !was.has(u.si)) : [{ name:t('Alle Starts') }];
+      if (cut.length){
+        for (const i of s) walls[i] = 0;
+        towerSize.delete(id);
+        if (Date.now() - lastBlockToast > 1500){
+          if (r.ok) toast('Nicht möglich: {0} würde kein Ziel mehr erreichen.', cut.map(u => u.name).join(', '));
+          else toast('Nicht möglich: der Weg würde komplett versperrt.');
+          lastBlockToast = Date.now();
+        }
+        continue;
+      }
+      route = r; pathMask.fill(0); for (const j of r.cells) pathMask[j] = 1;
+    }
+    ch = true;
+  }
+  return ch;
+}
+/* Zeichen-Elemente je Modus: Map/Entfernen = Zell-Indizes, Maze/Setzen = Turm-Stempel */
+function brushItems(c, erase){
+  if (mode === 'maze'){
+    const n = settings.tower, o = towerOrigin(c, n), s = stampIdx(o.x, o.y, n);
+    return erase ? s : [s];
+  }
+  return stampCells(c, settings.brush);
+}
+function shapeItems(shape, a, b, erase){
+  if (mode === 'maze') return erase ? shapeCells(shape, a, b, settings.tower) : mazeStamps(shape, a, b);
+  return shapeCells(shape, a, b, settings.brush);
+}
+const applyItems = (items, erase) => (mode === 'maze' && !erase) ? applyTowers(items) : applyCells(items, erase);
+function setPreview(items){
+  stroke.preview = items;
+  stroke.pcells = (mode === 'maze' && !stroke.erase) ? items.flat() : items;
+}
+function floodFill(x, y, type){
+  const start = idx(x, y), target = map.cells[start], marked = markerAt(x, y);
+  if (target === type && !marked) return false;
+  const seen = new Uint8Array(map.w*map.h), stack = [start]; seen[start] = 1; let ch = false;
+  while (stack.length){
+    const i = stack.pop(), cx = i % map.w, cy = (i / map.w) | 0;
+    if (paintTerrain(cx, cy, type)) ch = true;
+    for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=cx+dx, ny=cy+dy; if (nx<0||ny<0||nx>=map.w||ny>=map.h) continue;
+      const j = idx(nx,ny); if (seen[j] || map.cells[j] !== target) continue;
+      seen[j] = 1; stack.push(j);
+    }
+  }
+  return ch;
+}
+
+/* ---------- Verlauf (Undo/Redo) ---------- */
+function snapshot(){
+  return { w:map.w, h:map.h, cells:map.cells.slice(), walls:walls.slice(), guides:guides.map(g => ({...g})),
+           starts:map.starts.map(p => ({...p})), goals:map.goals.map(p => ({...p})), cps:map.cps.map(p => ({...p})) };
+}
+function restore(s){
+  map.w=s.w; map.h=s.h; map.cells=s.cells.slice(); walls=s.walls.slice(); guides=s.guides.map(g => ({...g}));
+  map.starts=s.starts.map(p => ({...p})); map.goals=s.goals.map(p => ({...p})); map.cps=s.cps.map(p => ({...p}));
+  syncInputs(); recompute();
+}
+function pushHistory(pre){ history.push(pre); if (history.length > 80) history.shift(); future = []; updateUndoUI(); }
+function undo(){ if (!history.length) return; future.push(snapshot()); restore(history.pop()); updateUndoUI(); }
+function redo(){ if (!future.length) return; history.push(snapshot()); restore(future.pop()); updateUndoUI(); }
+function updateUndoUI(){ $('btnUndo').disabled = !history.length; $('btnRedo').disabled = !future.length; }
+
+/* ---------- Ansicht ---------- */
+const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage');
+const view = { s:20, ox:RUL, oy:RUL };
+let dpr = 1, dirty = true, hover = null, stroke = null, pan = null, spaceDown = false;
+const sim = { run:false, t:0 };
+
+function resizeCanvas(){
+  const r = stage.getBoundingClientRect(); dpr = window.devicePixelRatio || 1;
+  cv.width = Math.max(1, Math.round(r.width*dpr)); cv.height = Math.max(1, Math.round(r.height*dpr));
+  dirty = true;
+}
+let fitted = false;
+new ResizeObserver(() => {
+  resizeCanvas();
+  if (!fitted && cv.width > 50){ fitted = true; fitView(); }
+  else if (fitted) constrainView();
+}).observe(stage);
+const VIEW_PAD = 16;
+function fitScale(){                      // Zoomstufe, bei der die ganze Karte sichtbar ist = kleinster erlaubter Zoom
+  const W = cv.width/dpr, H = cv.height/dpr, aw = W-RUL-2*VIEW_PAD, ah = H-RUL-2*VIEW_PAD;
+  return Math.max(2, Math.min(80, aw/map.w, ah/map.h));
+}
+function constrainView(){                 // Zoom nicht kleiner als „Karte komplett sichtbar“, Karte bleibt im Bild
+  const W = cv.width/dpr, H = cv.height/dpr, fs = fitScale();
+  if (view.s < fs) view.s = fs;
+  const cw = map.w*view.s, ch = map.h*view.s, aw = W-RUL, ah = H-RUL;
+  view.ox = cw + 2*VIEW_PAD <= aw ? RUL + (aw-cw)/2 : clamp(view.ox, W-VIEW_PAD-cw, RUL+VIEW_PAD);
+  view.oy = ch + 2*VIEW_PAD <= ah ? RUL + (ah-ch)/2 : clamp(view.oy, H-VIEW_PAD-ch, RUL+VIEW_PAD);
+  dirty = true;
+}
+function fitView(){
+  view.s = fitScale(); constrainView();
+}
+function cellAt(e, clamp){
+  const r = cv.getBoundingClientRect();
+  const fx = (e.clientX-r.left-view.ox)/view.s, fy = (e.clientY-r.top-view.oy)/view.s;
+  let x = Math.floor(fx), y = Math.floor(fy);
+  const inside = x>=0 && y>=0 && x<map.w && y<map.h;
+  if (clamp){ x = Math.max(0, Math.min(map.w-1, x)); y = Math.max(0, Math.min(map.h-1, y)); }
+  return { x, y, inside, fx, fy };
+}
+/* ---------- Hilfslinien: Fangpunkte im doppelten Raster (Schritt 0,5 Feld) ---------- */
+const snapPt = (fx, fy) => ({ x:clamp(Math.round(fx*2)/2, 0, map.w), y:clamp(Math.round(fy*2)/2, 0, map.h) });
+function guideEnd(a, fx, fy){            // Endpunkt auf 0°/45°/90° einrasten
+  const dx = fx-a.x, dy = fy-a.y, adx = Math.abs(dx), ady = Math.abs(dy), t = Math.tan(Math.PI/8);
+  let ux = Math.sign(dx), uy = Math.sign(dy), L;
+  if (ady <= adx*t){ uy = 0; L = adx; }
+  else if (adx <= ady*t){ ux = 0; L = ady; }
+  else L = (adx+ady)/2;
+  L = Math.round(L*2)/2;
+  const lim = Math.min(ux > 0 ? map.w-a.x : ux < 0 ? a.x : Infinity, uy > 0 ? map.h-a.y : uy < 0 ? a.y : Infinity);
+  L = Math.min(L, lim);
+  return { x:a.x+ux*L, y:a.y+uy*L };
+}
+function segDist(px, py, g){
+  const vx = g.x2-g.x1, vy = g.y2-g.y1, l2 = vx*vx+vy*vy;
+  const t = l2 ? clamp(((px-g.x1)*vx+(py-g.y1)*vy)/l2, 0, 1) : 0;
+  return Math.hypot(px-(g.x1+t*vx), py-(g.y1+t*vy));
+}
+function startGuide(e, c){
+  if (e.button === 2){                    // Rechtsklick: nächste Hilfslinie löschen
+    let best = -1, bd = .35;
+    guides.forEach((g, i) => { const d = segDist(c.fx, c.fy, g); if (d < bd){ bd = d; best = i; } });
+    if (best >= 0){ const pre = snapshot(); guides.splice(best, 1); pushHistory(pre); dirty = true; }
+    return;
+  }
+  const a = snapPt(c.fx, c.fy);
+  stroke = { guide:true, a, b:a, pre:snapshot(), erase:false, changed:false, preview:null };
+}
+const fmtC = v => dsep(+v.toFixed(1));
+function stampSize(){
+  if (mode === 'map' && ['start','goal','cp'].includes(settings.tile)) return 1;
+  return 1;
+}
+
+/* ---------- Rendering ---------- */
+function renderWorld(c, s, x0, y0, x1, y1, live){
+  const w = map.w, h = map.h;
+  c.fillStyle = '#0b0d10'; c.fillRect(0, 0, w, h);
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++){
+    const t = map.cells[y*w+x];
+    c.fillStyle = t===FREE ? C.free : t===BLOCK ? C.block : C.path;
+    c.fillRect(x, y, 1, 1);
+  }
+  if (s >= 5){
+    c.lineWidth = 1/s;
+    for (const major of [false, true]){
+      c.strokeStyle = major ? 'rgba(255,255,255,.28)' : 'rgba(255,255,255,.1)';
+      c.beginPath();
+      for (let x = x0; x <= x1; x++) if ((x%5===0) === major){ c.moveTo(x, y0); c.lineTo(x, y1); }
+      for (let y = y0; y <= y1; y++) if ((y%5===0) === major){ c.moveTo(x0, y); c.lineTo(x1, y); }
+      c.stroke();
+    }
+  }
+  if (mode === 'maze'){
+    const wid = (x, y) => (x < 0 || y < 0 || x >= w || y >= h) ? 0 : walls[y*w+x], g = .05;
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++){
+      const id = walls[y*w+x]; if (!id) continue;
+      const L = wid(x-1,y) !== id, R = wid(x+1,y) !== id, T = wid(x,y-1) !== id, B = wid(x,y+1) !== id;
+      const rx = x + (L ? g : 0), ry = y + (T ? g : 0), rw = x + 1 - (R ? g : 0) - rx, rh = y + 1 - (B ? g : 0) - ry;
+      c.fillStyle = TOWER_COL[towerSize.get(id) || 1] || C.wall; c.fillRect(rx, ry, rw, rh);
+      if (T){ c.fillStyle = 'rgba(255,255,255,.28)'; c.fillRect(rx, ry, rw, .14); }
+      if (B){ c.fillStyle = 'rgba(0,0,0,.22)'; c.fillRect(rx, ry+rh-.14, rw, .14); }
+    }
+    if (route && route.ok && settings.showPath){
+      c.lineJoin = 'round'; c.lineCap = 'round';
+      const trace = pts => { c.beginPath(); pts.forEach((p, k) => k ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.stroke(); };
+      for (const [style, width] of [
+        settings.move === 'any' && settings.enemyW > 0 ? ['rgba(61,219,217,.22)', settings.enemyW] : null,   // Gegnerbreite
+        ['rgba(0,0,0,.45)', .34], [C.route, .2]
+      ]){
+        if (!style) continue;
+        c.strokeStyle = style; c.lineWidth = width;
+        for (const r of route.routes) trace(r.pts);
+      }
+    }
+    if (live && route && route.ok && sim.run) drawSim(c);
+  }
+  if (settings.showGuides && guides.length){
+    c.lineCap = 'round';
+    const seg = () => { c.beginPath(); for (const g of guides){ c.moveTo(g.x1, g.y1); c.lineTo(g.x2, g.y2); } c.stroke(); };
+    c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = Math.max(.1, 3.5/s); seg();
+    c.strokeStyle = '#a3a9b3'; c.lineWidth = Math.max(.055, 1.8/s); seg();
+  }
+  // Marker
+  const dot = (p, color, label) => {
+    c.fillStyle = color; c.beginPath(); c.arc(p.x+.5, p.y+.5, .4, 0, 7); c.fill();
+    c.lineWidth = .06; c.strokeStyle = 'rgba(0,0,0,.6)'; c.stroke();
+    if (s >= 9){ c.fillStyle = '#06121f'; c.font = `bold ${label.length > 1 ? .4 : .5}px system-ui,sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label, p.x+.5, p.y+.53); }
+  };
+  map.starts.forEach((p, i) => dot(p, C.start, map.starts.length > 1 ? 'S'+(i+1) : 'S'));
+  map.goals.forEach((p, i) => dot(p, C.goal, map.goals.length > 1 ? t('Z')+(i+1) : t('Z')));
+  map.cps.forEach((p, i) => dot(p, C.cp, String(i+1)));
+  c.lineWidth = 2/s; c.strokeStyle = 'rgba(255,255,255,.55)'; c.strokeRect(0, 0, w, h);
+}
+function drawSim(c){
+  const spacing = 3, rad = settings.move === 'any' ? Math.max(.1, settings.enemyW/2) : .22;
+  for (const r of route.routes){
+    const cum = r.cum, pts = r.pts, total = cum[cum.length-1];
+    if (!(total > 0)) continue;
+    for (let d = sim.t % spacing; d < total; d += spacing){
+      let lo = 0, hi = cum.length-1;
+      while (hi-lo > 1){ const m = (lo+hi)>>1; if (cum[m] <= d) lo = m; else hi = m; }
+      const f = (d-cum[lo]) / ((cum[hi]-cum[lo]) || 1), a = pts[lo], b = pts[hi];
+      const px = a.x + (b.x-a.x)*f, py = a.y + (b.y-a.y)*f;
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(px, py, rad, 0, 7); c.fill();
+      c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = .05; c.stroke();
+    }
+  }
+}
+function draw(){
+  dirty = false;
+  const W = cv.width/dpr, H = cv.height/dpr, s = view.s;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle = '#0b0d10'; ctx.fillRect(0,0,W,H);
+  const x0 = Math.max(0, Math.floor((RUL-view.ox)/s)), y0 = Math.max(0, Math.floor((RUL-view.oy)/s));
+  const x1 = Math.min(map.w, Math.ceil((W-view.ox)/s)), y1 = Math.min(map.h, Math.ceil((H-view.oy)/s));
+  ctx.save();
+  ctx.beginPath(); ctx.rect(RUL, RUL, W-RUL, H-RUL); ctx.clip();
+  ctx.translate(view.ox, view.oy); ctx.scale(s, s);
+  renderWorld(ctx, s, x0, y0, Math.max(x0,x1), Math.max(y0,y1), true);
+  // Vorschau der Form
+  if (stroke && stroke.preview){
+    ctx.fillStyle = stroke.erase ? 'rgba(255,107,107,.5)' : 'rgba(255,255,255,.4)';
+    for (const i of stroke.pcells) ctx.fillRect(i % map.w, (i / map.w | 0), 1, 1);
+  }
+  // Hilfslinien-Werkzeug: Fangpunkte, Vorschau
+  if (mode === 'map' && settings.shape === 'guide'){
+    if (s >= 16){
+      ctx.fillStyle = 'rgba(190,196,206,.35)';
+      for (let py = y0*2; py <= y1*2; py++) for (let px = x0*2; px <= x1*2; px++){ ctx.beginPath(); ctx.arc(px/2, py/2, 1.6/s, 0, 7); ctx.fill(); }
+    }
+    if (stroke && stroke.guide){
+      const { a, b } = stroke;
+      ctx.lineCap = 'round'; ctx.strokeStyle = '#c4c9d1'; ctx.lineWidth = Math.max(.055, 2/s); ctx.setLineDash([.25, .18]);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.setLineDash([]);
+      if (a.x !== b.x || a.y !== b.y){
+        const label = `${fmtC(Math.abs(b.x-a.x))} × ${fmtC(Math.abs(b.y-a.y))}`;
+        ctx.font = `bold ${14/s}px system-ui,sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.lineWidth = 3/s; ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.strokeText(label, b.x+8/s, b.y-10/s);
+        ctx.fillStyle = '#fff'; ctx.fillText(label, b.x+8/s, b.y-10/s);
+      }
+    } else if (hover && !pan){
+      const p = snapPt(hover.fx, hover.fy);
+      ctx.lineWidth = 2/s; ctx.strokeStyle = '#d5d9e0'; ctx.beginPath(); ctx.arc(p.x, p.y, 6/s, 0, 7); ctx.stroke();
+    }
+  } else
+  // Hover
+  if (hover && hover.inside && !pan){
+    let n, hx, hy, bad = false;
+    if (mode === 'maze'){
+      n = settings.tower; const o = towerOrigin(hover, n); hx = o.x; hy = o.y;
+      bad = stampIdx(hx, hy, n).some(i => map.cells[i] !== FREE || walls[i]);
+    } else { n = stampSize(); const off = (n-1)>>1; hx = hover.x-off; hy = hover.y-off; }
+    ctx.lineWidth = 2/s; ctx.strokeStyle = bad ? '#ff6b6b' : '#ffffff';
+    ctx.strokeRect(hx+.03, hy+.03, n-.06, n-.06);
+  }
+  ctx.restore();
+  // Lineale
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle = '#1a1e25'; ctx.fillRect(0,0,W,RUL); ctx.fillRect(0,0,RUL,H);
+  ctx.fillStyle = '#8b93a3'; ctx.font = '10px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const step = [1,2,5,10,20,50].find(k => k*s >= 26) || 100;
+  for (let i = 0; i < map.w; i++) if ((i+1)%step===0 || (step===1)){
+    const px = view.ox + (i+.5)*s; if (px > RUL && px < W) ctx.fillText(i+1, px, RUL/2);
+  }
+  ctx.textAlign = 'center';
+  for (let j = 0; j < map.h; j++) if ((j+1)%step===0 || (step===1)){
+    const py = view.oy + (j+.5)*s; if (py > RUL && py < H) ctx.fillText(j+1, RUL/2, py);
+  }
+  ctx.strokeStyle = '#303847'; ctx.beginPath(); ctx.moveTo(RUL,RUL+.5); ctx.lineTo(W,RUL+.5); ctx.moveTo(RUL+.5,RUL); ctx.lineTo(RUL+.5,H); ctx.stroke();
+}
+let lastT = 0;
+function loop(t){
+  const dt = Math.min(.1, (t-lastT)/1000); lastT = t;
+  if (sim.run && mode === 'maze'){ sim.t += dt * 7; dirty = true; }
+  if (dirty) draw();
+  requestAnimationFrame(loop);
+}
+
+/* ---------- Eingabe ---------- */
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = cv.getBoundingClientRect(), mx = e.clientX-r.left, my = e.clientY-r.top;
+  const fs = fitScale(), ns = clamp(view.s * Math.exp(-e.deltaY*.0015), fs, Math.max(90, fs));
+  view.ox = mx-(mx-view.ox)*ns/view.s; view.oy = my-(my-view.oy)*ns/view.s; view.s = ns; constrainView();
+}, { passive:false });
+cv.addEventListener('pointerdown', e => {
+  if (e.button === 1 || (e.button === 0 && spaceDown)){
+    e.preventDefault(); cv.setPointerCapture(e.pointerId);
+    pan = { x:e.clientX, y:e.clientY, ox:view.ox, oy:view.oy }; cv.classList.add('pan'); return;
+  }
+  if (e.button !== 0 && e.button !== 2) return;
+  e.preventDefault();
+  const c = cellAt(e, false); if (!c.inside) return;
+  cv.setPointerCapture(e.pointerId);
+  if (mode === 'map' && settings.shape === 'guide'){ startGuide(e, c); return; }
+  const erase = e.button === 2, tile = settings.tile;
+  let shape = settings.shape;
+  if (mode === 'maze' && shape === 'fill') shape = 'brush';
+  if (erase && shape === 'fill') shape = 'brush';
+  const marker = mode === 'map' && !erase && ['start','goal','cp'].includes(tile);
+  stroke = { erase, shape, start:c, last:c, pre:snapshot(), changed:false, preview:null };
+  if (marker){ stroke.changed = placeMarker(tile, c.x, c.y); finishStroke(); return; }
+  if (shape === 'fill'){
+    stroke.changed = floodFill(c.x, c.y, tile==='block' ? BLOCK : tile==='path' ? PATH : FREE);
+    finishStroke(); return;
+  }
+  if (shape === 'brush') stroke.changed = applyItems(brushItems(c, erase), erase);
+  else setPreview(shapeItems(shape, c, c, erase));
+  dirty = true;
+});
+cv.addEventListener('pointermove', e => {
+  hover = cellAt(e, false);
+  if (pan){ view.ox = pan.ox + e.clientX-pan.x; view.oy = pan.oy + e.clientY-pan.y; constrainView(); }
+  else if (stroke && stroke.guide){
+    stroke.b = guideEnd(stroke.a, hover.fx, hover.fy);
+  }
+  else if (stroke){
+    const c = cellAt(e, true);
+    if (stroke.shape === 'brush'){
+      if (c.x !== stroke.last.x || c.y !== stroke.last.y){
+        for (const p of bresenham(stroke.last, c)) if (applyItems(brushItems(p, stroke.erase), stroke.erase)) stroke.changed = true;
+        stroke.last = c;
+      }
+    } else setPreview(shapeItems(stroke.shape, stroke.start, c, stroke.erase));
+  }
+  updatePos(); dirty = true;
+});
+cv.addEventListener('pointerup', () => {
+  if (pan){ pan = null; cv.classList.remove('pan'); return; }
+  if (!stroke) return;
+  if (stroke.guide){
+    const { a, b } = stroke;
+    if ((a.x !== b.x || a.y !== b.y) && !guides.some(g => g.x1===a.x && g.y1===a.y && g.x2===b.x && g.y2===b.y)){
+      guides.push({ x1:a.x, y1:a.y, x2:b.x, y2:b.y }); stroke.changed = true;
+      settings.showGuides = true; $('chkGuides').checked = true;
+    }
+    finishStroke(); return;
+  }
+  if (stroke.preview){ if (applyItems(stroke.preview, stroke.erase)) stroke.changed = true; stroke.preview = null; }
+  finishStroke();
+});
+cv.addEventListener('pointerleave', () => { hover = null; updatePos(); dirty = true; });
+function finishStroke(){
+  if (stroke && stroke.changed) pushHistory(stroke.pre);
+  stroke = null; recompute();
+}
+window.addEventListener('keydown', e => {
+  if (e.target.matches('input[type=text],input[type=number]')) return;
+  if (e.code === 'Space'){ spaceDown = true; e.preventDefault(); return; }
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && k === 'z'){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+  if ((e.ctrlKey || e.metaKey) && k === 'y'){ e.preventDefault(); redo(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (k === 'home'){ fitView(); return; }
+  if (k === 'p' && mode === 'maze'){ $('chkPath').click(); return; }
+  if (k === 'h' && mode === 'map'){ $('btnGuideTool').click(); return; }
+  if (mode === 'map'){ const tl = TILES.find(x => x.key === k); if (tl){ leaveGuide(); settings.tile = tl.id; syncPalette(); } }
+  else if (['1','2','4'].includes(k)){ settings.tower = +k; syncPalette(); }
+});
+window.addEventListener('keyup', e => { if (e.code === 'Space') spaceDown = false; });
+
+/* ---------- UI ---------- */
+/* Hilfslinien-Werkzeug ist eine eigene Gruppe: es zeichnet keinen Feldtyp, sondern Orientierungslinien */
+function leaveGuide(){ if (settings.shape === 'guide') settings.shape = mode === 'map' ? 'rect' : 'line'; }
+function buildPalette(){
+  $('palette').innerHTML = TILES.map(tl =>
+    `<button data-tile="${tl.id}" title="${t(tl.hint)}"><span class="sw" style="background:${tl.color}"></span>${t(tl.name)}<kbd>${tl.key}</kbd></button>`).join('');
+  $('palette').onclick = e => { const b = e.target.closest('button'); if (b){ leaveGuide(); settings.tile = b.dataset.tile; syncPalette(); } };
+  $('towers').onclick = e => { const b = e.target.closest('button'); if (b){ settings.tower = +b.dataset.size; syncPalette(); } };
+}
+function syncPalette(){
+  document.querySelectorAll('#palette button').forEach(b => b.classList.toggle('on', b.dataset.tile === settings.tile));
+  document.querySelectorAll('#towers button').forEach(b => b.classList.toggle('on', +b.dataset.size === settings.tower));
+  $('btnGuideTool').classList.toggle('on', settings.shape === 'guide');
+  $('palette').classList.toggle('dim', settings.shape === 'guide');
+  dirty = true;
+  $('stKeys').textContent = mode === 'map'
+    ? t('Ziehen: Fläche zeichnen · Rechtsklick: zurücksetzen · 1–6: Feldtyp · H: Hilfslinie')
+    : t('Klicken/Ziehen: Türme setzen · Rechtsklick: entfernen · 1/2/4: Turmgröße · P: Weg');
+}
+function syncInputs(){
+  $('inW').value = map.w; $('inH').value = map.h; $('mapName').value = map.name;
+  $('curMap').textContent = `${map.name} (${map.w}×${map.h})`;
+}
+function updatePos(){
+  if (!hover || !hover.inside){ $('stPos').textContent = '–'; return; }
+  const m = markerAt(hover.x, hover.y), ct = map.cells[idx(hover.x, hover.y)];
+  const what = m ? t({ start:'Start', goal:'Ziel', cp:'Checkpoint' }[m.kind]) + ' ' + (m.i+1)
+           : ct === BLOCK ? t('Blockiert') : ct === PATH ? t('Fester Weg') : (mode==='maze' && walls[idx(hover.x,hover.y)]) ? t('Turm') : t('Bebaubar');
+  $('stPos').textContent = t('Spalte {0} · Zeile {1} · {2}', hover.x+1, hover.y+1, what);
+}
+const fmt = v => settings.move !== 'four' ? dsep(v.toFixed(1)) : String(Math.round(v));
+function updateStats(){
+  if (mode !== 'maze') return;
+  const ids = new Set();
+  for (let i = 0; i < walls.length; i++) if (walls[i]) ids.add(walls[i]);
+  const cnt = { 1:0, 2:0, 4:0 };
+  for (const id of ids) cnt[towerSize.get(id) || 1]++;
+  $('sT1').textContent = cnt[1]; $('sT2').textContent = cnt[2]; $('sT4').textContent = cnt[4];
+  $('sTowers').textContent = ids.size;
+  const ok = route && route.ok, bok = baseRoute && baseRoute.ok;
+  $('sLen').textContent = ok ? fmt(route.len) : '–';
+  $('sBase').textContent = bok ? fmt(baseRoute.len) : '–';
+  const g = $('sGain');
+  if (ok && bok){ const d = route.len - baseRoute.len; g.textContent = (d>=0?'+':'') + fmt(d) + (baseRoute.len ? ` (${Math.round(d/baseRoute.len*100)}%)` : ''); g.className = d>0 ? 'up' : ''; }
+  else { g.textContent = '–'; g.className = ''; }
+  let list = '';
+  if (ok){
+    const r = route.routes[0];
+    if (map.starts.length > 1 || map.goals.length > 1) list += `<span>${t('Kürzester Weg')}</span><span>${r.label}</span>`;
+    if (r.segs.length > 1) list += r.segs.map(s => `<span>${s.label}</span><span>${fmt(s.len)}</span>`).join('');
+  }
+  $('segList').innerHTML = list;
+}
+function updateBanner(){
+  const b = $('banner'); let html = '';
+  if (mode === 'maze'){
+    if (route && !route.ok) html = `<div class="${route.missing?'':'err'}">${route.msg}</div>`;
+    else if (route && route.unreachable.length)
+      html = `<div class="err">${t('Kein Weg zu einem Ziel: {0}', route.unreachable.map(u => u.name).join(', '))}</div>`;
+  } else if (!map.starts.length || !map.goals.length){
+    html = `<div>${t('Tipp: Setze mindestens einen <b>Start</b> und ein <b>Ziel</b> (mehrere möglich, optional Checkpoints), damit im Maze-Modus ein Weg berechnet wird.')}</div>`;
+  }
+  b.innerHTML = html;
+}
+let toastTimer;
+function toast(key, ...args){
+  const el = $('toast'); el.textContent = t(key, ...args); el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+function setMode(m){
+  mode = m; document.body.dataset.mode = m;
+  document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  if (walls.length !== map.w*map.h) walls = new Uint32Array(map.w*map.h);
+  settings.shape = m === 'map' ? 'rect' : 'line';                 // Map: immer Fläche, Maze: immer Linie
+  if (m === 'maze') sanitizeWalls();
+  history = []; future = []; updateUndoUI();
+  syncInputs(); syncPalette(); recompute();
+}
+
+/* ---------- Karte ändern ---------- */
+function setMap(m, w2){
+  map = m; walls = w2 || new Uint32Array(m.w*m.h); guides = m.guides || [];
+  if (!w2) towerSize.clear();
+  history = []; future = []; updateUndoUI();
+  syncInputs(); recompute(); fitView();
+}
+function resizeMap(nw, nh){
+  nw = Math.max(5, Math.min(300, nw|0)); nh = Math.max(5, Math.min(300, nh|0));
+  if (nw === map.w && nh === map.h) return;
+  // Verschiebung des bisherigen Inhalts: Änderung links/oben schiebt ihn, rechts/unten nicht, beidseitig halbiert
+  const dx = nw - map.w, dy = nh - map.h;
+  const ox = settings.resizeX === 'left' ? dx : settings.resizeX === 'both' ? Math.floor(dx/2) : 0;
+  const oy = settings.resizeY === 'top' ? dy : settings.resizeY === 'both' ? Math.floor(dy/2) : 0;
+  const pre = snapshot(), ow = map.w, oh = map.h, cells = new Uint8Array(nw*nh), nwalls = new Uint32Array(nw*nh);
+  for (let y = 0; y < nh; y++) for (let x = 0; x < nw; x++){
+    const sx = x-ox, sy = y-oy;
+    if (sx < 0 || sy < 0 || sx >= ow || sy >= oh) continue;
+    cells[y*nw+x] = map.cells[sy*ow+sx]; nwalls[y*nw+x] = walls[sy*ow+sx];
+  }
+  const mv = p => { if (!p) return null; const x = p.x+ox, y = p.y+oy; return x >= 0 && y >= 0 && x < nw && y < nh ? { x, y } : null; };
+  for (const k of ['starts', 'goals', 'cps']) map[k] = map[k].map(mv).filter(Boolean);
+  map.w = nw; map.h = nh; map.cells = cells; walls = nwalls;
+  guides = guides.map(g => ({ x1:g.x1+ox, y1:g.y1+oy, x2:g.x2+ox, y2:g.y2+oy }))
+                 .filter(g => Math.min(g.x1, g.x2, g.y1, g.y2) >= 0 && Math.max(g.x1, g.x2) <= nw && Math.max(g.y1, g.y2) <= nh);
+  pushHistory(pre); syncInputs(); recompute(); fitView();
+}
+
+function mirrorMap(horizontal){          // horizontal: links↔rechts, sonst oben↔unten
+  const w = map.w, h = map.h, pre = snapshot();
+  const cells = new Uint8Array(w*h), nwalls = new Uint32Array(w*h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+    const src = (horizontal ? y : h-1-y)*w + (horizontal ? w-1-x : x);
+    cells[y*w+x] = map.cells[src]; nwalls[y*w+x] = walls[src];
+  }
+  map.cells = cells; walls = nwalls;
+  const mp = p => p && { x:horizontal ? w-1-p.x : p.x, y:horizontal ? p.y : h-1-p.y };
+  for (const k of ['starts', 'goals', 'cps']) map[k] = map[k].map(mp);
+  guides = guides.map(g => horizontal ? { x1:w-g.x1, y1:g.y1, x2:w-g.x2, y2:g.y2 } : { x1:g.x1, y1:h-g.y1, x2:g.x2, y2:h-g.y2 });
+  pushHistory(pre); recompute();
+  toast(horizontal ? 'Karte horizontal gespiegelt.' : 'Karte vertikal gespiegelt.');
+}
+
+/* ---------- Dateien ---------- */
+const rows = (arr, w, h) => Array.from({ length:h }, (_, y) => Array.from(arr.subarray(y*w, (y+1)*w)).join(''));
+function serializeMap(){
+  return { format:'td-map', version:1, name:map.name, width:map.w, height:map.h, cells:rows(map.cells, map.w, map.h),
+           starts:map.starts, goals:map.goals, checkpoints:map.cps,
+           guides:guides.map(g => [g.x1, g.y1, g.x2, g.y2]) };
+}
+function parseGuides(list, w, h){
+  const out = [];
+  if (!Array.isArray(list)) return out;
+  for (const t of list){
+    if (!Array.isArray(t) || t.length !== 4 || !t.every(v => Number.isFinite(v) && v >= 0 && Math.round(v*2) === v*2)) continue;
+    if (t[0] > w || t[2] > w || t[1] > h || t[3] > h) continue;
+    out.push({ x1:t[0], y1:t[1], x2:t[2], y2:t[3] });
+  }
+  return out;
+}
+function wallRows(){
+  return Array.from({ length:map.h }, (_, y) => { let s = ''; for (let x = 0; x < map.w; x++) s += walls[y*map.w+x] ? '1' : '0'; return s; });
+}
+function towerList(){          // vollständige n×n-Türme als [x, y, n]; Rest wird beim Laden zu 1×1-Türmen
+  const b = new Map();
+  for (let i = 0; i < walls.length; i++){
+    const id = walls[i]; if (!id) continue;
+    const x = i % map.w, y = (i / map.w) | 0; let t = b.get(id);
+    if (!t){ t = { x0:x, y0:y, x1:x, y1:y, c:0 }; b.set(id, t); }
+    t.x0 = Math.min(t.x0, x); t.y0 = Math.min(t.y0, y); t.x1 = Math.max(t.x1, x); t.y1 = Math.max(t.y1, y); t.c++;
+  }
+  return [...b.values()].filter(t => { const w = t.x1-t.x0+1; return w === t.y1-t.y0+1 && t.c === w*w; }).map(t => [t.x0, t.y0, t.x1-t.x0+1]);
+}
+function serializeMaze(){
+  return { format:'td-maze', version:2, name:map.name, map:serializeMap(),
+           walls:wallRows(), towers:towerList(),
+           settings:{ move:settings.move, diag:settings.move === 'eight', enemyW:settings.enemyW, margin:settings.margin, tower:settings.tower } };
+}
+const safe = s => (s || 'karte').replace(/[^\w\-äöüÄÖÜß ]+/g, '_').trim() || 'karte';
+function download(name, blob){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+function parseMap(o){
+  if (!o || typeof o !== 'object') throw new Error(t('Ungültige Datei.'));
+  const w = o.width|0, h = o.height|0;
+  if (w < 2 || h < 2 || w > 400 || h > 400) throw new Error(t('Ungültige Rastergröße.'));
+  if (!Array.isArray(o.cells) || o.cells.length !== h) throw new Error(t('Kartendaten beschädigt.'));
+  const m = newMap(w, h, typeof o.name === 'string' ? o.name : t('Karte'));
+  o.cells.forEach((row, y) => {
+    if (typeof row !== 'string' || row.length !== w) throw new Error(t('Kartendaten beschädigt.'));
+    for (let x = 0; x < w; x++){ const v = +row[x]; m.cells[y*w+x] = v === 1 || v === 2 ? v : 0; }
+  });
+  const pt = p => p && Number.isInteger(p.x) && Number.isInteger(p.y) && p.x>=0 && p.y>=0 && p.x<w && p.y<h ? { x:p.x, y:p.y } : null;
+  const list = (a, single) => (Array.isArray(a) ? a : single ? [single] : []).map(pt).filter(Boolean);   // "start"/"goal" = altes Dateiformat
+  m.starts = list(o.starts, o.start); m.goals = list(o.goals, o.goal);
+  m.cps = (Array.isArray(o.checkpoints) ? o.checkpoints : []).map(pt).filter(Boolean);
+  m.guides = parseGuides(o.guides, w, h);          // ein evtl. gespeichertes Vorlage-Bild (o.image) wird ignoriert
+  return m;
+}
+async function loadObject(o, mapOnly){
+  if (o && o.format === 'td-maze'){
+    const m = parseMap(o.map);
+    let w2 = new Uint32Array(m.w*m.h), id = 1;
+    towerSize.clear();
+    if (!mapOnly){
+      if (!Array.isArray(o.walls) || o.walls.length !== m.h) throw new Error(t('Maze-Daten beschädigt.'));
+      const pending = new Uint8Array(m.w*m.h);
+      o.walls.forEach((row, y) => { for (let x = 0; x < m.w; x++) if (row[x] === '1') pending[y*m.w+x] = 1; });
+      for (const t of (Array.isArray(o.towers) ? o.towers : [])){
+        const [tx, ty, n] = Array.isArray(t) ? t : [];
+        if (![tx, ty, n].every(Number.isInteger) || ![1, 2, 4].includes(n) || tx < 0 || ty < 0 || tx+n > m.w || ty+n > m.h) continue;
+        const cells = []; for (let dy = 0; dy < n; dy++) for (let dx = 0; dx < n; dx++) cells.push((ty+dy)*m.w+tx+dx);
+        if (!cells.every(i => pending[i])) continue;
+        cells.forEach(i => { w2[i] = id; pending[i] = 0; }); towerSize.set(id, n); id++;
+      }
+      for (let i = 0; i < pending.length; i++) if (pending[i]){ towerSize.set(id, 1); w2[i] = id++; }
+      if (o.settings){
+        settings.move = ['four','eight','any'].includes(o.settings.move) ? o.settings.move : (o.settings.diag ? 'eight' : 'four');
+        const num = (v, lo, hi, d) => Number.isFinite(v) ? clamp(Math.round(v*100)/100, lo, hi) : d;
+        settings.enemyW = num(o.settings.enemyW, .3, 1, .5); settings.margin = num(o.settings.margin, .02, .25, .2);
+        syncMove();
+        if ([1, 2, 4].includes(o.settings.tower)) settings.tower = o.settings.tower;
+      }
+    }
+    nextId = id;
+    if (!m.guides.length) m.guides = parseGuides(o.guides, m.w, m.h);   // ältere Maze-Dateien
+    setMap(m, w2); return mapOnly ? 'map' : 'maze';
+  }
+  if (o && o.format === 'td-map'){
+    setMap(parseMap(o)); return 'map';
+  }
+  throw new Error(t('Das ist keine TD-Map/Maze-Datei.'));
+}
+async function loadFile(file, opts = {}){
+  if (!file) return;
+  try{
+    const o = JSON.parse(await file.text());
+    const kind = await loadObject(o, opts.mapOnly);
+    if (opts.goMaze && mode !== 'maze') setMode('maze');
+    else if (kind === 'maze' && mode !== 'maze') setMode('maze');
+    else setMode(mode);
+    fitView();
+    toast('„{0}“ geladen.', map.name);
+  } catch (err){ toast('Fehler: {0}', err.message); }
+}
+/* Laden/Speichern: Dialoge öffnen im Ordner der HTML-Datei (File System Access API, Chrome/Edge).
+   Der Browser kennt den Ordner der Seite nicht; deshalb wählt man einmalig die HTML-Datei aus,
+   der Verweis wird gemerkt und dient danach als Startort aller Dialoge. */
+const FSA = ['showSaveFilePicker', 'showOpenFilePicker'].every(k => k in window);
+let anchor = null, anchorSkipped = false;
+const idbOpen = () => new Promise((res, rej) => { const r = indexedDB.open('tdplaner', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+async function idbGet(k){
+  try{ const db = await idbOpen(); return await new Promise((res, rej) => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+  catch (e){ return null; }
+}
+async function idbSet(k, v){
+  try{ const db = await idbOpen(); await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); }
+  catch (e){}
+}
+function updateDirUI(){
+  document.querySelectorAll('.dirBox').forEach(b => b.style.display = FSA ? '' : 'none');
+  document.querySelectorAll('.dirName').forEach(n => n.textContent = anchor ? anchor.name : t(anchorSkipped ? 'Standard' : 'noch nicht festgelegt'));
+}
+async function pickAnchor(){
+  try{
+    const [h] = await showOpenFilePicker({ types:[{ description:t('Diese HTML-Datei'), accept:{ 'text/html':['.html', '.htm'] } }] });
+    anchor = h; anchorSkipped = false; await idbSet('anchor', h); updateDirUI(); return true;
+  } catch (e){ return false; }
+}
+async function useAnchor(){                       // 'ok' | 'asked' (Aktion abgebrochen, erneut klicken) | 'skip' (normale Dialoge)
+  if (!FSA || anchorSkipped) return 'skip';
+  if (anchor) return 'ok';
+  toast('Einmalig: Bitte diese HTML-Datei auswählen – Laden/Speichern öffnet danach immer in ihrem Ordner.');
+  if (await pickAnchor()) toast('Ordner gemerkt. Bitte jetzt noch einmal klicken.');
+  else { anchorSkipped = true; updateDirUI(); toast('Ohne Ordner: Dialoge öffnen am Standardort. Bitte noch einmal klicken.'); }
+  return 'asked';
+}
+async function saveAs(name, blob, desc, mime, ext){
+  const st = await useAnchor();
+  if (st === 'asked') return false;
+  if (st === 'ok'){
+    try{
+      const h = await showSaveFilePicker({ suggestedName:name, startIn:anchor, types:[{ description:desc, accept:{ [mime]:[ext] } }] });
+      const w = await h.createWritable(); await w.write(blob); await w.close(); return true;
+    } catch (e){ if (e && e.name === 'AbortError') return false; console.warn(e); }
+  }
+  download(name, blob); return true;
+}
+async function openFile(opts, input){
+  const st = await useAnchor();
+  if (st === 'asked') return;
+  if (st === 'ok'){
+    try{
+      const [h] = await showOpenFilePicker({ startIn:anchor, types:[{ description:t('TD-Dateien (.json)'), accept:{ 'application/json':['.json'] } }] });
+      loadFile(await h.getFile(), opts); return;
+    } catch (e){ if (e && e.name === 'AbortError') return; console.warn(e); }
+  }
+  input.click();
+}
+function exportPng(){
+  const cs = Math.max(6, Math.min(40, Math.floor(4000 / Math.max(map.w, map.h))));
+  const c = document.createElement('canvas'); c.width = map.w*cs; c.height = map.h*cs;
+  const g = c.getContext('2d'); g.scale(cs, cs);
+  renderWorld(g, cs, 0, 0, map.w, map.h, false);
+  c.toBlob(async b => { if (await saveAs(safe(map.name) + '-maze.png', b, t('PNG-Bild'), 'image/png', '.png')) toast('PNG exportiert.'); });
+}
+
+/* ---------- Verdrahtung ---------- */
+document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+$('btnUndo').onclick = undo; $('btnRedo').onclick = redo; $('btnFit').onclick = fitView;
+$('mapName').oninput = e => { map.name = e.target.value; $('curMap').textContent = `${map.name} (${map.w}×${map.h})`; };
+$('btnNew').onclick = () => {
+  if (!confirm(t('Neue leere Karte anlegen? Die aktuelle Karte geht verloren, sofern nicht gespeichert.'))) return;
+  setMap(newMap(map.w, map.h, t('Neue Karte')));
+};
+$('btnSaveMap').onclick = async () => {
+  const blob = new Blob([JSON.stringify(serializeMap())], { type:'application/json' });
+  if (await saveAs(safe(map.name) + '.tdmap.json', blob, t('TD-Karte'), 'application/json', '.json')) toast('Karte gespeichert.');
+};
+$('btnSaveDefault').onclick = async () => {
+  const blob = new Blob(['window.TD_DEFAULT_MAP = ' + JSON.stringify(serializeMap()) + ';\n'], { type:'text/javascript' });
+  if (await saveAs('default-map.js', blob, t('Startkarte (default-map.js)'), 'text/javascript', '.js'))
+    toast('Startkarte gespeichert – sie muss als „default-map.js“ neben der HTML-Datei liegen.');
+};
+$('btnLoadMap').onclick = () => openFile({ mapOnly:true }, $('fMap'));
+$('btnLoadMap2').onclick = () => openFile({ mapOnly:true }, $('fMap'));
+$('btnLoadMaze').onclick = () => openFile({ goMaze:true }, $('fMaze'));
+document.querySelectorAll('.pickDir').forEach(b => b.onclick = async () => { if (await pickAnchor()) toast('Ordner gemerkt.'); });
+$('fMap').onchange = e => { loadFile(e.target.files[0], { mapOnly:true }); e.target.value = ''; };
+$('fMaze').onchange = e => { loadFile(e.target.files[0], { goMaze:true }); e.target.value = ''; };
+$('btnSaveMaze').onclick = async () => {
+  const blob = new Blob([JSON.stringify(serializeMaze())], { type:'application/json' });
+  if (await saveAs(safe(map.name) + '.tdmaze.json', blob, t('TD-Maze'), 'application/json', '.json')) toast('Maze gespeichert.');
+};
+$('btnPng').onclick = exportPng;
+$('btnResize').onclick = () => resizeMap(+$('inW').value, +$('inH').value);
+function syncResizeSides(){
+  document.querySelectorAll('#segX button').forEach(b => b.classList.toggle('on', b.dataset.v === settings.resizeX));
+  document.querySelectorAll('#segY button').forEach(b => b.classList.toggle('on', b.dataset.v === settings.resizeY));
+}
+$('segX').onclick = e => { const b = e.target.closest('button'); if (b){ settings.resizeX = b.dataset.v; syncResizeSides(); } };
+$('segY').onclick = e => { const b = e.target.closest('button'); if (b){ settings.resizeY = b.dataset.v; syncResizeSides(); } };
+syncResizeSides();
+$('btnGuideTool').onclick = () => {
+  if (settings.shape === 'guide') leaveGuide();
+  else settings.shape = 'guide';
+  syncPalette();
+};
+$('btnMirrorH').onclick = () => mirrorMap(true);
+$('btnMirrorV').onclick = () => mirrorMap(false);
+$('chkPrevent').onchange = e => settings.prevent = e.target.checked;
+const fmt2 = v => dsep(v.toFixed(2));
+function syncMove(){
+  $('selMove').value = settings.move; $('enemyW').value = Math.round(settings.enemyW*100); $('margin').value = Math.round(settings.margin*100);
+  $('moveOpts').style.display = settings.move === 'any' ? '' : 'none';
+  $('wLbl').textContent = t('Breite: {0}', fmt2(settings.enemyW));
+  $('mLbl').textContent = t('Wandabstand: {0}', fmt2(settings.margin));
+  const R = clearR();
+  $('rNote').textContent = t('Abstand Gegnermitte–Wand: {0} Felder', fmt2(R)) + (settings.enemyW/2 + settings.margin > .5 ? t(' (max. 0,5)') : '') + t('. Engere Lücken sind nicht passierbar.');
+}
+$('selMove').onchange = e => { settings.move = e.target.value; syncMove(); recompute(); };
+$('enemyW').oninput = e => { settings.enemyW = e.target.value/100; syncMove(); recompute(); };
+$('margin').oninput = e => { settings.margin = e.target.value/100; syncMove(); recompute(); };
+$('chkPath').onchange = e => { settings.showPath = e.target.checked; dirty = true; };
+$('chkGuides').onchange = e => { settings.showGuides = e.target.checked; dirty = true; };
+$('btnClearGuides').onclick = () => {
+  if (!guides.length) return;
+  const pre = snapshot(); guides = []; pushHistory(pre); dirty = true;
+};
+$('chkSim').onchange = e => { sim.run = e.target.checked; dirty = true; };
+$('btnClearWalls').onclick = () => {
+  if (!walls.some(Boolean)) return;
+  const pre = snapshot(); walls.fill(0); pushHistory(pre); recompute();
+};
+// Drag & Drop
+let dragDepth = 0;
+window.addEventListener('dragenter', e => { if (e.dataTransfer.types.includes('Files')){ dragDepth++; document.body.classList.add('dragging'); } });
+window.addEventListener('dragleave', () => { if (--dragDepth <= 0){ dragDepth = 0; document.body.classList.remove('dragging'); } });
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => {
+  e.preventDefault(); dragDepth = 0; document.body.classList.remove('dragging');
+  const f = e.dataTransfer.files[0]; if (f) loadFile(f, { mapOnly: mode === 'map' });
+});
+
+/* ---------- Einklappbare Gruppen in der linken Leiste ---------- */
+(function(){
+  const store = { get(k){ try{ return localStorage.getItem(k); } catch (e){ return null; } },
+                  set(k, v){ try{ localStorage.setItem(k, v); } catch (e){} } };
+  const secs = [];
+  document.querySelectorAll('aside > section').forEach(sec => {
+    const h = sec.querySelector(':scope > h3'); if (!h) return;
+    const body = document.createElement('div'), inner = document.createElement('div');
+    body.className = 'sec-body'; inner.className = 'sec-in'; body.appendChild(inner);
+    while (h.nextSibling) inner.appendChild(h.nextSibling);
+    sec.appendChild(body);
+    const key = 'tdplaner.sec.' + h.textContent.trim();
+    h.classList.add('sec-h'); h.tabIndex = 0; h.setAttribute('role', 'button');
+    const set = (collapsed, save = true) => {
+      sec.classList.toggle('collapsed', collapsed); h.setAttribute('aria-expanded', String(!collapsed));
+      if (save) store.set(key, collapsed ? '1' : '0');
+      if (inner.style) inner.toggleAttribute('inert', collapsed);
+    };
+    h.onclick = () => { set(!sec.classList.contains('collapsed')); syncAll(); };
+    h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); h.click(); } };
+    set(store.get(key) === '1', false);
+    secs.push({ sec, set });
+  });
+  const btn = $('collapseAll');
+  function syncAll(){ btn.dataset.allCollapsed = secs.every(s => s.sec.classList.contains('collapsed')) ? '1' : ''; btn.textContent = btn.dataset.allCollapsed ? t('Alle ausklappen') : t('Alle einklappen'); }
+  window.syncCollapseBtn = syncAll;
+  btn.onclick = () => { const collapse = !btn.dataset.allCollapsed; secs.forEach(s => s.set(collapse)); syncAll(); };
+  syncAll();
+})();
+
+/* ---------- Start ---------- */
+function setLang(l){
+  lang = l; try{ localStorage.setItem('tdplaner.lang', l); } catch (e){}
+  applyStaticI18n(); buildPalette(); syncPalette(); syncMove(); syncInputs(); updateDirUI(); updatePos(); recompute();
+  if (window.syncCollapseBtn) window.syncCollapseBtn();
+}
+$('langSeg').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.lang !== lang) setLang(b.dataset.lang); };
+applyStaticI18n();
+buildPalette(); syncPalette(); syncInputs(); syncMove(); updateDirUI();
+idbGet('anchor').then(h => { if (h && h.name){ anchor = h; updateDirUI(); } });
+if (window.TD_DEFAULT_MAP){                       // Startkarte aus default-map.js
+  loadObject(window.TD_DEFAULT_MAP, true)
+    .then(() => { setMode('maze'); fitView(); toast('Startkarte „{0}“ geladen.', map.name); })
+    .catch(err => toast('Startkarte fehlerhaft: {0}', err.message));
+} updateUndoUI(); resizeCanvas(); fitView(); recompute();
+requestAnimationFrame(t => { lastT = t; loop(t); });
+window.addEventListener('load', () => { resizeCanvas(); fitView(); });
+</script>
+</body>
+</html>
