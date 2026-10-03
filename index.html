@@ -124,8 +124,8 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
       <button id="btnLoadMap" data-en="📂 Load">📂 Laden</button>
     </div>
     <div class="row"><button id="btnSaveStart" title="Speichert alle bisherigen Startkarten plus die aktuelle Karte als start-maps.js (gleicher Name = ersetzt). Liegt diese Datei neben der HTML-Datei, erscheinen die Karten in der Liste „Startkarten“." data-en-title="Saves all existing start maps plus the current map as start-maps.js (same name = replaced). If this file sits next to the HTML file, the maps appear in the “Start maps” list." data-en="➕ Add to start maps">➕ Zu Startkarten hinzufügen</button></div>
-    <div class="row"><button id="btnSaveDefault" title="Speichert die aktuelle Karte als default-map.js. Liegt diese Datei neben der HTML-Datei, wird sie bei jedem Start geladen." data-en-title="Saves the current map as default-map.js. If this file sits next to the HTML file, it is loaded on every start." data-en="⭐ Save as default map">⭐ Als Standardkarte speichern</button></div>
-    <div class="note" data-en="Saves as <b>.tdmap.json</b>. You load this file in maze mode. “Add to start maps” saves <b>start-maps.js</b> (all start maps so far plus this one) – replace the file in the folder of the HTML file and the map appears in the “Start maps” list. “Default map” saves <b>default-map.js</b> – this map is loaded on every start.">Speichert als <b>.tdmap.json</b>. Diese Datei lädst du im Maze-Modus. „Zu Startkarten hinzufügen“ speichert <b>start-maps.js</b> (alle bisherigen Startkarten plus diese) – ersetze die Datei im Ordner der HTML-Datei, dann erscheint die Karte in der Liste „Startkarten“. „Standardkarte“ speichert <b>default-map.js</b> – diese Karte wird bei jedem Start geladen.</div>
+    <div class="row"><button id="btnSaveDefault" title="Speichert den Namen der aktuellen Karte als default-map.js. Die Karte muss in start-maps.js stehen; sie wird dann bei jedem Start geladen." data-en-title="Saves the name of the current map as default-map.js. The map must be listed in start-maps.js; it is then loaded on every start." data-en="⭐ Save as default map">⭐ Als Standardkarte speichern</button></div>
+    <div class="note" data-en="Saves as <b>.tdmap.json</b>. You load this file in maze mode. “Add to start maps” saves <b>start-maps.js</b> (all start maps so far plus this one) – replace the file in the folder of the HTML file and the map appears in the “Start maps” list. “Default map” saves <b>default-map.js</b> with only the name of this map (it must be in start-maps.js) – this map is loaded on every start.">Speichert als <b>.tdmap.json</b>. Diese Datei lädst du im Maze-Modus. „Zu Startkarten hinzufügen“ speichert <b>start-maps.js</b> (alle bisherigen Startkarten plus diese) – ersetze die Datei im Ordner der HTML-Datei, dann erscheint die Karte in der Liste „Startkarten“. „Standardkarte“ speichert <b>default-map.js</b> nur mit dem Namen dieser Karte (sie muss in start-maps.js stehen) – diese Karte wird bei jedem Start geladen.</div>
     <div class="note dirBox" style="display:none"><span data-en="Dialogs open in:">Dialoge öffnen in:</span> <b class="dirName">–</b> <button class="pickDir" style="padding:1px 8px;font-size:12px" data-en="change">ändern</button></div>
   </section>
   <section class="only-maze">
@@ -246,7 +246,7 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
 <input type="file" id="fMap" accept=".json,application/json" hidden>
 <input type="file" id="fMaze" accept=".json,application/json" hidden>
 
-<!-- Startkarte: liegt "default-map.js" im selben Ordner, wird sie beim Start geladen (fehlt sie, passiert nichts) -->
+<!-- Standardkarte: "default-map.js" im selben Ordner nennt nur den Namen (window.TD_DEFAULT_MAP_NAME) einer Karte aus start-maps.js; fehlt sie, passiert nichts -->
 <script src="default-map.js"></script>
 <!-- Auswahlliste "Startkarten": "start-maps.js" (window.TD_START_MAPS = [Karte, …]), fehlt sie, passiert nichts -->
 <script src="start-maps.js"></script>
@@ -294,6 +294,8 @@ const EN = {
   'Startkarte gespeichert – sie muss als „default-map.js“ neben der HTML-Datei liegen.':'Start map saved – it must be named “default-map.js” and sit next to the HTML file.',
   'Neue leere Karte anlegen? Die aktuelle Karte geht verloren, sofern nicht gespeichert.':'Create a new empty map? The current map will be lost unless saved.',
   'Diese HTML-Datei':'This HTML file', 'TD-Dateien (.json)':'TD files (.json)', 'PNG-Bild':'PNG image', 'TD-Karte':'TD map', 'TD-Maze':'TD maze',
+  'Standardkarte gespeichert – die Datei „default-map.js“ neben der HTML-Datei ersetzen.':'Default map saved – replace the file “default-map.js” next to the HTML file.',
+  'Standardkarte gespeichert – aber diese Karte fehlt noch in start-maps.js („Zu Startkarten hinzufügen“).':'Default map saved – but this map is not in start-maps.js yet (“Add to start maps”).',
   'Startkarte (default-map.js)':'Start map (default-map.js)', 'Startkarten (start-maps.js)':'Start maps (start-maps.js)',
   'Startkarten gespeichert ({0}) – die Datei „start-maps.js“ neben der HTML-Datei ersetzen.':'Start maps saved ({0}) – replace the file “start-maps.js” next to the HTML file.',
   'Abstand Gegnermitte–Wand: {0} Felder':'Distance enemy center to wall: {0} cells', ' (max. 0,5)':' (max. 0.5)',
@@ -1387,11 +1389,14 @@ $('btnSaveMap').onclick = async () => {
   if (await saveAs(safe(map.name) + '.tdmap.json', blob, t('TD-Karte'), 'application/json', '.json')) toast('Karte gespeichert.');
 };
 $('btnSaveDefault').onclick = async () => {
-  const blob = new Blob(['window.TD_DEFAULT_MAP = ' + JSON.stringify(serializeMap()) + ';\n'], { type:'text/javascript' });
+  const blob = new Blob(['window.TD_DEFAULT_MAP_NAME = ' + JSON.stringify(map.name) + ';\n'], { type:'text/javascript' });
   if (await saveAs('default-map.js', blob, t('Startkarte (default-map.js)'), 'text/javascript', '.js'))
-    toast('Startkarte gespeichert – sie muss als „default-map.js“ neben der HTML-Datei liegen.');
+    toast(startMaps().some(m => m.name === map.name)
+      ? 'Standardkarte gespeichert – die Datei „default-map.js“ neben der HTML-Datei ersetzen.'
+      : 'Standardkarte gespeichert – aber diese Karte fehlt noch in start-maps.js („Zu Startkarten hinzufügen“).');
 };
-/* Startkarten: start-maps.js (window.TD_START_MAPS) plus default-map.js; bei gleichem Namen gewinnt start-maps.js */
+/* Startkarten: start-maps.js (window.TD_START_MAPS). default-map.js nennt nur den Namen der Standardkarte (window.TD_DEFAULT_MAP_NAME);
+   eine alte default-map.js mit kompletter Karte (window.TD_DEFAULT_MAP) wird weiter gelesen, bei gleichem Namen gewinnt start-maps.js */
 function startMaps(){
   const list = Array.isArray(window.TD_START_MAPS) ? window.TD_START_MAPS.filter(m => m && typeof m.name === 'string') : [];
   const d = window.TD_DEFAULT_MAP;
@@ -1519,7 +1524,7 @@ applyStaticI18n();
 buildPalette(); syncPalette(); syncInputs(); syncMove(); updateDirUI();
 idbGet('anchor').then(h => { if (h && h.name){ anchor = h; updateDirUI(); } });
 buildStartList();
-const firstMap = window.TD_DEFAULT_MAP || startMaps()[0];   // default-map.js, sonst erste Karte aus start-maps.js
+const firstMap = startMaps().find(m => m.name === window.TD_DEFAULT_MAP_NAME) || window.TD_DEFAULT_MAP || startMaps()[0];   // Standardkarte (Name aus default-map.js), sonst alte Vollkarte, sonst erste Karte der Liste
 if (firstMap){
   loadObject(firstMap, true)
     .then(() => { setMode('maze'); fitView(); toast('Startkarte „{0}“ geladen.', map.name); })
