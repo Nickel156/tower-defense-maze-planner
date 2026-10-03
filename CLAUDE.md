@@ -1,9 +1,9 @@
 # TD Maze Planer
 
-Helfer-Tool zum Planen von Mazes in Tower-Defense-Spielen. **Eine einzige, eigenständige HTML-Datei** (`td-maze-planer.html`, Vanilla JS, Canvas, kein Build, keine Abhängigkeiten, läuft offline). Bedienung und Texte in **Deutsch und Englisch** (Umschalter DE/EN in der Kopfzeile).
+Helfer-Tool zum Planen von Mazes in Tower-Defense-Spielen. **Eine einzige, eigenständige HTML-Datei** (`index.html`, Vanilla JS, Canvas, kein Build, keine Abhängigkeiten, läuft offline). Bedienung und Texte in **Deutsch und Englisch** (Umschalter DE/EN in der Kopfzeile).
 
 ## Dateien im Ordner
-- `td-maze-planer.html` – das ganze Tool (CSS, HTML, JS in einer Datei).
+- `index.html` – das ganze Tool (CSS, HTML, JS in einer Datei).
 - `default-map.js` – optionale Startkarte, wird beim Start geladen (siehe unten). Vom Nutzer erzeugt, nicht ändern oder löschen.
 - Gespeicherte Karten/Mazes des Nutzers (`*.tdmap.json`, `*.tdmaze.json`) – nicht anfassen.
 - `default-map.jsyxyx` – nicht von uns (vermutlich Sicherungskopie), ignorieren.
@@ -18,7 +18,7 @@ Der Browser-Pane von Claude Code kann `file://` nicht öffnen. Zum Testen einen 
 ```bash
 python -m http.server 8766 --directory D:\ClaudeCode\MazePlanner
 ```
-Danach `http://localhost:8766/td-maze-planer.html`. Nach dem Test den Server wieder beenden. Im Pane ggf. `resize_window` (z. B. 1280×800) setzen, sonst hat die Seite Größe 0. Zustand lässt sich per `javascript_tool` prüfen (alle Top-Level-`let/const` wie `map`, `walls`, `route`, `settings` sind erreichbar). Keine Testdateien im Projektordner hinterlassen (v. a. keine `default-map.js` überschreiben).
+Danach `http://localhost:8766/index.html`. Nach dem Test den Server wieder beenden. Im Pane ggf. `resize_window` (z. B. 1280×800) setzen, sonst hat die Seite Größe 0. Zustand lässt sich per `javascript_tool` prüfen (alle Top-Level-`let/const` wie `map`, `walls`, `route`, `settings` sind erreichbar). Keine Testdateien im Projektordner hinterlassen (v. a. keine `default-map.js` überschreiben).
 
 ## Aufbau der Datei
 - **CSS** oben; Sichtbarkeit je Modus über `body[data-mode=map|maze] .only-map/.only-maze`.
