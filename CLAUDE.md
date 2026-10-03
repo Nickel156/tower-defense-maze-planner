@@ -5,6 +5,7 @@ Helfer-Tool zum Planen von Mazes in Tower-Defense-Spielen. **Eine einzige, eigen
 ## Dateien im Ordner
 - `index.html` – das ganze Tool (CSS, HTML, JS in einer Datei).
 - `default-map.js` – optionale Startkarte, wird beim Start geladen (siehe unten). Vom Nutzer erzeugt, nicht ändern oder löschen.
+- `start-maps.js` – optionale Auswahlliste „Startkarten“ (`window.TD_START_MAPS = [Karte, …]`, siehe unten). Wird vom Button „Zu Startkarten hinzufügen“ erzeugt.
 - Gespeicherte Karten/Mazes des Nutzers (`*.tdmap.json`, `*.tdmaze.json`) – nicht anfassen.
 - `default-map.jsyxyx` – nicht von uns (vermutlich Sicherungskopie), ignorieren.
 
@@ -42,7 +43,8 @@ Danach `http://localhost:8766/index.html`. Nach dem Test den Server wieder beend
 ## Dateiformate (JSON)
 - **Karte** `*.tdmap.json`: `{ format:'td-map', version:1, name, width, height, cells:[Zeilen als Ziffernstrings], starts, goals, checkpoints, guides:[[x1,y1,x2,y2]] }`. Altes Format mit `start`/`goal` (einzeln) und `image` wird weiter gelesen (Bild ignoriert).
 - **Maze** `*.tdmaze.json`: `{ format:'td-maze', version:2, name, map:{…komplette Karte…}, walls:[Zeilen '0'/'1'], towers:[[x,y,n]], settings:{ move, diag, enemyW, margin, tower } }`. Die Karte ist **eingebettet**.
-- **Startkarte** `default-map.js`: `window.TD_DEFAULT_MAP = {…Karten-JSON…};` Als `.js`, weil Browser bei `file://` kein `fetch` auf Nachbardateien erlauben, `<script src>` aber schon. Wird beim Start per `<script src="default-map.js">` geladen und im Maze-Reiter geöffnet. Erzeugt über den Button „Als Startkarte speichern“ im Map-Modus.
+- **Startkarte** `default-map.js`: `window.TD_DEFAULT_MAP = {…Karten-JSON…};` Als `.js`, weil Browser bei `file://` kein `fetch` auf Nachbardateien erlauben, `<script src>` aber schon. Wird beim Start per `<script src="default-map.js">` geladen und im Maze-Reiter geöffnet. Erzeugt über „Als Standardkarte speichern“ im Map-Modus.
+- **Startkarten-Liste** `start-maps.js`: `window.TD_START_MAPS = [Karten-JSON, …];` Erscheint als Gruppe „Startkarten“ (Auswahl + „Gewählte Karte laden“, lädt nur die Karte, bleibt im aktuellen Modus). `startMaps()` = Liste plus `default-map.js` (gleicher Name: `start-maps.js` gewinnt). „Zu Startkarten hinzufügen“ schreibt die komplette Datei neu (bestehende Karten + aktuelle, gleicher Name wird ersetzt); der Nutzer ersetzt die Datei im Projektordner. Beim Start wird `default-map.js` geladen, sonst die erste Karte der Liste. Fehlt die Datei, bleibt die Gruppe ausgeblendet.
 
 ## Datei-Dialoge
 Chrome/Edge: File System Access API. Der Browser kennt den Ordner der Seite nicht, daher wählt der Nutzer einmalig die HTML-Datei aus; der Verweis liegt in IndexedDB und dient als `startIn` für alle Dialoge. Andere Browser: normaler Download bzw. `<input type=file>`.
