@@ -16,8 +16,12 @@
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column;overflow:hidden}
-header{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
-.brand{font-weight:700;letter-spacing:.2px;margin-right:6px}
+header{display:flex;align-items:center;gap:6px;padding:2px 8px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:nowrap;font-size:13px;line-height:1.2}
+header button{padding:2px 8px;white-space:nowrap;border-radius:5px}
+header .seg{border-radius:6px}
+header .seg button{padding:3px 11px}
+.brand{font-weight:700;letter-spacing:.2px;margin-right:4px;white-space:nowrap}
+@media (max-width:900px){header .lbl{display:none}}
 .sp{flex:1}
 button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 11px;cursor:pointer}
 button:hover{border-color:#4a5568;background:#2a3040}
@@ -83,7 +87,7 @@ label.lbl span:first-child{min-width:104px}
 #banner div.err{border-left-color:var(--danger)}
 #toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#0009;border:1px solid var(--line);backdrop-filter:blur(6px);padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:80%}
 #toast.show{opacity:1}
-footer{display:flex;gap:16px;padding:5px 14px;background:var(--panel);border-top:1px solid var(--line);color:var(--muted);font-size:12px;flex-wrap:wrap}
+footer{display:none;gap:16px;padding:5px 14px;background:var(--panel);border-top:1px solid var(--line);color:var(--muted);font-size:12px;flex-wrap:wrap}
 footer .sp{flex:1}
 #drop{position:fixed;inset:0;background:rgba(90,169,255,.18);border:3px dashed var(--accent2);display:none;align-items:center;justify-content:center;font-size:22px;z-index:9;pointer-events:none}
 body.dragging #drop{display:flex}
@@ -102,9 +106,9 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
   <div class="seg sm" id="langSeg" title="Sprache / Language">
     <button data-lang="de">DE</button><button data-lang="en">EN</button>
   </div>
-  <button id="btnUndo" title="Strg+Z" data-en-title="Ctrl+Z" data-en="↶ Undo">↶ Rückgängig</button>
-  <button id="btnRedo" title="Strg+Y" data-en-title="Ctrl+Y" data-en="↷ Redo">↷ Wiederholen</button>
-  <button id="btnFit" title="Pos1" data-en-title="Home" data-en="Fit view">Ansicht einpassen</button>
+  <button id="btnUndo" title="Rückgängig (Strg+Z)" data-en-title="Undo (Ctrl+Z)"><span>↶</span> <span class="lbl" data-en="Undo">Rückgängig</span></button>
+  <button id="btnRedo" title="Wiederholen (Strg+Y)" data-en-title="Redo (Ctrl+Y)"><span>↷</span> <span class="lbl" data-en="Redo">Wiederholen</span></button>
+  <button id="btnFit" title="Ansicht einpassen (Pos1)" data-en-title="Fit view (Home)"><span>⤢</span> <span class="lbl" data-en="Fit view">Ansicht einpassen</span></button>
 </header>
 
 <main>
