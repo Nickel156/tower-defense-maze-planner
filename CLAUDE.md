@@ -48,6 +48,7 @@ Danach `http://localhost:8766/index.html`. Nach dem Test den Server wieder beend
 
 ## Datei-Dialoge
 Chrome/Edge: File System Access API. Der Browser kennt den Ordner der Seite nicht, daher wählt der Nutzer einmalig die HTML-Datei aus; der Verweis liegt in IndexedDB und dient als `startIn` für alle Dialoge. Andere Browser: normaler Download bzw. `<input type=file>`.
+Text-Export/-Import (Dialog `#txtDlg`, `openText`/`copyText`/`loadText`): „Maze kopieren/einfügen“ und „Karte kopieren/einfügen“ zeigen bzw. lesen das JSON als Text. Gedacht für die Discord-Aktivität, wo Speichern (Download) vermutlich blockiert ist; Laden per Datei geht dort wohl. **Discord-Erkennung:** `inDiscord` (Host `*.discordsays.com` oder `frame_id` in der URL) setzt `body.discord`; dann sind alle Elemente mit Klasse `no-discord` (Datei-Speichern, PNG, Startkarten-Export, Ordner-Hinweis) ausgeblendet und `only-discord`-Hinweise sichtbar. Neue Funktionen mit Download bekommen `no-discord`. Buttons heißen bewusst „…-Datei…“ bzw. „…-Text…“.
 
 ## Mehrsprachigkeit (Konvention, unbedingt einhalten)
 - Deutsch ist die Quellsprache. **Statisches HTML:** deutscher Text im Element, englische Fassung im Attribut `data-en` (bzw. `data-en-title`, `data-en-placeholder`). `data-en` ersetzt das gesamte `innerHTML` – nur auf Blattelemente setzen, **nie** auf Container mit Buttons/Inputs, JS-Handlern oder JS-befüllten Kindern (Text dort in ein eigenes `<span data-en>` packen).

@@ -91,6 +91,15 @@ footer{display:none;gap:16px;padding:5px 14px;background:var(--panel);border-top
 footer .sp{flex:1}
 #drop{position:fixed;inset:0;background:rgba(90,169,255,.18);border:3px dashed var(--accent2);display:none;align-items:center;justify-content:center;font-size:22px;z-index:9;pointer-events:none}
 body.dragging #drop{display:flex}
+.only-discord{display:none}
+body.discord .only-discord{display:block}
+body.discord .no-discord{display:none!important}
+#txtDlg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:20}
+#txtDlg[hidden]{display:none}
+#txtDlg .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;width:min(560px,92vw);display:flex;flex-direction:column;gap:8px}
+#txtDlg h4{margin:0;font-size:15px}
+#txtDlg .note{margin:0}
+#txtDlg textarea{width:100%;height:min(260px,40vh);resize:vertical;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:12px ui-monospace,monospace;box-sizing:border-box}
 body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!important}
 @media (max-width:760px){main{flex-direction:column}aside{width:auto;max-height:42vh;border-right:0;border-bottom:1px solid var(--line)}}
 </style>
@@ -120,26 +129,38 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
     <div class="row"><input type="text" id="mapName" placeholder="Name der Karte" data-en-placeholder="Map name" maxlength="60"></div>
     <div class="row">
       <button id="btnNew" data-en="New">Neu</button>
-      <button id="btnSaveMap" class="primary" data-en="💾 Save">💾 Speichern</button>
-      <button id="btnLoadMap" data-en="📂 Load">📂 Laden</button>
+      <button id="btnSaveMap" class="primary no-discord" data-en="💾 Save map file">💾 Karten-Datei speichern</button>
+      <button id="btnLoadMap" data-en="📂 Load map file">📂 Karten-Datei laden</button>
     </div>
+    <div class="row">
+      <button id="btnCopyMap" title="Karte als Text anzeigen/kopieren – wenn Speichern nicht geht (z. B. in der Discord-Aktivität)" data-en-title="Show/copy the map as text – for when saving is not possible (e.g. in the Discord activity)" data-en="📋 Copy map text">📋 Karten-Text kopieren</button>
+      <button id="btnPasteMap" title="Karte aus Text laden" data-en-title="Load a map from text" data-en="📥 Paste map text">📥 Karten-Text einfügen</button>
+    </div>
+    <div class="note only-discord" data-en="In Discord, downloads are not possible. Use “Copy map text” to keep a map and “Paste map text” to load it again.">In Discord sind Downloads nicht möglich. Nutze „Karten-Text kopieren“, um eine Karte aufzubewahren, und „Karten-Text einfügen“, um sie wieder zu laden.</div>
+    <div class="no-discord">
     <div class="row"><button id="btnSaveStart" title="Speichert alle bisherigen Startkarten plus die aktuelle Karte als start-maps.js (gleicher Name = ersetzt). Liegt diese Datei neben der HTML-Datei, erscheinen die Karten in der Liste „Startkarten“." data-en-title="Saves all existing start maps plus the current map as start-maps.js (same name = replaced). If this file sits next to the HTML file, the maps appear in the “Start maps” list." data-en="➕ Add to start maps">➕ Zu Startkarten hinzufügen</button></div>
     <div class="row"><button id="btnSaveDefault" title="Speichert den Namen der aktuellen Karte als default-map.js. Die Karte muss in start-maps.js stehen; sie wird dann bei jedem Start geladen." data-en-title="Saves the name of the current map as default-map.js. The map must be listed in start-maps.js; it is then loaded on every start." data-en="⭐ Save as default map">⭐ Als Standardkarte speichern</button></div>
     <div class="note" data-en="Saves as <b>.tdmap.json</b>. You load this file in maze mode. “Add to start maps” saves <b>start-maps.js</b> (all start maps so far plus this one) – replace the file in the folder of the HTML file and the map appears in the “Start maps” list. “Default map” saves <b>default-map.js</b> with only the name of this map (it must be in start-maps.js) – this map is loaded on every start.">Speichert als <b>.tdmap.json</b>. Diese Datei lädst du im Maze-Modus. „Zu Startkarten hinzufügen“ speichert <b>start-maps.js</b> (alle bisherigen Startkarten plus diese) – ersetze die Datei im Ordner der HTML-Datei, dann erscheint die Karte in der Liste „Startkarten“. „Standardkarte“ speichert <b>default-map.js</b> nur mit dem Namen dieser Karte (sie muss in start-maps.js stehen) – diese Karte wird bei jedem Start geladen.</div>
     <div class="note dirBox" style="display:none"><span data-en="Dialogs open in:">Dialoge öffnen in:</span> <b class="dirName">–</b> <button class="pickDir" style="padding:1px 8px;font-size:12px" data-en="change">ändern</button></div>
+    </div>
   </section>
   <section class="only-maze">
     <h3 data-en="Files">Dateien</h3>
     <div class="note" style="margin:0 0 8px"><span data-en="Map:">Karte:</span> <b id="curMap">–</b></div>
     <div class="row">
-      <button id="btnLoadMap2" class="primary" data-en="📂 Load map">📂 Karte laden</button>
-      <button id="btnLoadMaze" data-en="📂 Load maze">📂 Maze laden</button>
+      <button id="btnLoadMap2" class="primary" data-en="📂 Load map file">📂 Karten-Datei laden</button>
+      <button id="btnLoadMaze" data-en="📂 Load maze file">📂 Maze-Datei laden</button>
     </div>
-    <div class="row">
-      <button id="btnSaveMaze" data-en="💾 Save maze">💾 Maze speichern</button>
+    <div class="row no-discord">
+      <button id="btnSaveMaze" data-en="💾 Save maze file">💾 Maze-Datei speichern</button>
       <button id="btnPng" data-en="🖼 As PNG">🖼 Als PNG</button>
     </div>
-    <div class="note dirBox" style="display:none"><span data-en="Dialogs open in:">Dialoge öffnen in:</span> <b class="dirName">–</b> <button class="pickDir" style="padding:1px 8px;font-size:12px" data-en="change">ändern</button></div>
+    <div class="row">
+      <button id="btnCopyMaze" title="Maze als Text anzeigen/kopieren – wenn Speichern nicht geht (z. B. in der Discord-Aktivität)" data-en-title="Show/copy the maze as text – for when saving is not possible (e.g. in the Discord activity)" data-en="📋 Copy maze text">📋 Maze-Text kopieren</button>
+      <button id="btnPasteMaze" title="Maze aus Text laden" data-en-title="Load a maze from text" data-en="📥 Paste maze text">📥 Maze-Text einfügen</button>
+    </div>
+    <div class="note only-discord" data-en="In Discord, downloads are not possible (no “Save maze file”, no PNG). Use “Copy maze text” to keep a maze and “Paste maze text” to load it again.">In Discord sind Downloads nicht möglich (kein „Maze-Datei speichern“, kein PNG). Nutze „Maze-Text kopieren“, um ein Maze aufzubewahren, und „Maze-Text einfügen“, um es wieder zu laden.</div>
+    <div class="note dirBox no-discord" style="display:none"><span data-en="Dialogs open in:">Dialoge öffnen in:</span> <b class="dirName">–</b> <button class="pickDir" style="padding:1px 8px;font-size:12px" data-en="change">ändern</button></div>
   </section>
   <section id="secStart" style="display:none">
     <h3 data-en="Start maps">Startkarten</h3>
@@ -242,6 +263,18 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
   <span class="sp"></span>
   <span id="stKeys"></span>
 </footer>
+<div id="txtDlg" hidden>
+  <div class="box">
+    <h4 id="txtTitle"></h4>
+    <div class="note" id="txtNote"></div>
+    <textarea id="txtArea" spellcheck="false"></textarea>
+    <div class="row">
+      <button id="txtCopy" class="primary" data-en="Copy">Kopieren</button>
+      <button id="txtLoad" class="primary" data-en="Load">Laden</button>
+      <button id="txtClose" data-en="Close">Schließen</button>
+    </div>
+  </div>
+</div>
 <div id="drop" data-en="Drop file here (.tdmap.json / .tdmaze.json)">Datei hier ablegen (.tdmap.json / .tdmaze.json)</div>
 <input type="file" id="fMap" accept=".json,application/json" hidden>
 <input type="file" id="fMaze" accept=".json,application/json" hidden>
@@ -296,6 +329,13 @@ const EN = {
   'Diese HTML-Datei':'This HTML file', 'TD-Dateien (.json)':'TD files (.json)', 'PNG-Bild':'PNG image', 'TD-Karte':'TD map', 'TD-Maze':'TD maze',
   'Standardkarte gespeichert – die Datei „default-map.js“ neben der HTML-Datei ersetzen.':'Default map saved – replace the file “default-map.js” next to the HTML file.',
   'Standardkarte gespeichert – aber diese Karte fehlt noch in start-maps.js („Zu Startkarten hinzufügen“).':'Default map saved – but this map is not in start-maps.js yet (“Add to start maps”).',
+  'Maze kopieren':'Copy maze', 'Karte kopieren':'Copy map', 'Maze einfügen':'Paste maze', 'Karte einfügen':'Paste map',
+  'Kopiere den Text (Strg+C) und bewahre ihn z. B. in einer Textdatei oder Notiz auf. Mit „Maze-Text einfügen“ lädst du ihn wieder.':'Copy the text (Ctrl+C) and keep it, e.g. in a text file or note. Use “Paste maze text” to load it again.',
+  'Kopiere den Text (Strg+C) und bewahre ihn z. B. in einer Textdatei oder Notiz auf. Mit „Karten-Text einfügen“ lädst du ihn wieder.':'Copy the text (Ctrl+C) and keep it, e.g. in a text file or note. Use “Paste map text” to load it again.',
+  'Füge den Text mit Strg+V ein und klicke auf „Laden“.':'Paste the text with Ctrl+V and click “Load”.',
+  'In die Zwischenablage kopiert.':'Copied to the clipboard.',
+  'Kopieren nicht möglich – bitte Text markieren und mit Strg+C kopieren.':'Copying not possible – please select the text and press Ctrl+C.',
+  'Das ist kein gültiger Text.':'This is not valid text.',
   'Startkarte (default-map.js)':'Start map (default-map.js)', 'Startkarten (start-maps.js)':'Start maps (start-maps.js)',
   'Startkarten gespeichert ({0}) – die Datei „start-maps.js“ neben der HTML-Datei ersetzen.':'Start maps saved ({0}) – replace the file “start-maps.js” next to the HTML file.',
   'Abstand Gegnermitte–Wand: {0} Felder':'Distance enemy center to wall: {0} cells', ' (max. 0,5)':' (max. 0.5)',
@@ -1075,7 +1115,7 @@ function finishStroke(){
   stroke = null; recompute();
 }
 window.addEventListener('keydown', e => {
-  if (e.target.matches('input[type=text],input[type=number]')) return;
+  if (e.target.matches('input[type=text],input[type=number],textarea')) return;
   if (e.code === 'Space'){ spaceDown = true; e.preventDefault(); return; }
   const k = e.key.toLowerCase();
   if ((e.ctrlKey || e.metaKey) && k === 'z'){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
@@ -1433,6 +1473,46 @@ $('btnSaveMaze').onclick = async () => {
   const blob = new Blob([JSON.stringify(serializeMaze())], { type:'application/json' });
   if (await saveAs(safe(map.name) + '.tdmaze.json', blob, t('TD-Maze'), 'application/json', '.json')) toast('Maze gespeichert.');
 };
+/* Text-Export/-Import: Karte oder Maze als Text kopieren und wieder einfügen (wenn Dateien nicht gehen, z. B. in der Discord-Aktivität) */
+let txtOpts = null;
+function openText(title, note, text, opts){
+  txtOpts = opts || null;
+  const exp = text != null;
+  $('txtTitle').textContent = t(title); $('txtNote').textContent = t(note);
+  const ta = $('txtArea'); ta.value = exp ? text : ''; ta.readOnly = exp;
+  $('txtCopy').style.display = exp ? '' : 'none'; $('txtLoad').style.display = exp ? 'none' : '';
+  $('txtDlg').hidden = false; ta.focus();
+  if (exp){ ta.select(); copyText(false); }
+}
+function closeText(){ $('txtDlg').hidden = true; txtOpts = null; }
+async function copyText(loud = true){
+  const ta = $('txtArea'); ta.focus(); ta.select();
+  let ok = false;
+  try{ await navigator.clipboard.writeText(ta.value); ok = true; } catch (e){}
+  if (!ok){ try{ ok = document.execCommand('copy'); } catch (e){} }
+  if (ok) toast('In die Zwischenablage kopiert.');
+  else if (loud) toast('Kopieren nicht möglich – bitte Text markieren und mit Strg+C kopieren.');
+}
+async function loadText(){
+  try{
+    let o; try{ o = JSON.parse($('txtArea').value.trim()); } catch (e){ throw new Error(t('Das ist kein gültiger Text.')); }
+    const opts = txtOpts || {};
+    const kind = await loadObject(o, opts.mapOnly);
+    if (opts.goMaze && mode !== 'maze') setMode('maze');
+    else if (kind === 'maze' && mode !== 'maze') setMode('maze');
+    else setMode(mode);
+    fitView(); closeText(); toast('„{0}“ geladen.', map.name);
+  } catch (err){ toast('Fehler: {0}', err.message); }
+}
+$('btnCopyMaze').onclick = () => openText('Maze kopieren', 'Kopiere den Text (Strg+C) und bewahre ihn z. B. in einer Textdatei oder Notiz auf. Mit „Maze-Text einfügen“ lädst du ihn wieder.', JSON.stringify(serializeMaze()));
+$('btnCopyMap').onclick = () => openText('Karte kopieren', 'Kopiere den Text (Strg+C) und bewahre ihn z. B. in einer Textdatei oder Notiz auf. Mit „Karten-Text einfügen“ lädst du ihn wieder.', JSON.stringify(serializeMap()));
+$('btnPasteMaze').onclick = () => openText('Maze einfügen', 'Füge den Text mit Strg+V ein und klicke auf „Laden“.', null, { goMaze:true });
+$('btnPasteMap').onclick = () => openText('Karte einfügen', 'Füge den Text mit Strg+V ein und klicke auf „Laden“.', null, { mapOnly:true });
+$('txtCopy').onclick = () => copyText();
+$('txtLoad').onclick = loadText;
+$('txtClose').onclick = closeText;
+$('txtDlg').onclick = e => { if (e.target === $('txtDlg')) closeText(); };
+$('txtDlg').onkeydown = e => { if (e.key === 'Escape') closeText(); };
 $('btnPng').onclick = exportPng;
 $('btnResize').onclick = () => resizeMap(+$('inW').value, +$('inH').value);
 function syncResizeSides(){
@@ -1520,6 +1600,9 @@ function setLang(l){
   if (window.syncCollapseBtn) window.syncCollapseBtn();
 }
 $('langSeg').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.lang !== lang) setLang(b.dataset.lang); };
+/* Discord-Aktivität (Seite läuft über *.discordsays.com): dort gibt es keine Downloads → Datei-Speichern ausblenden, Text-Export bleibt */
+const inDiscord = /(^|\.)discordsays\.com$/.test(location.hostname) || /[?&]frame_id=/.test(location.search);
+document.body.classList.toggle('discord', inDiscord);
 applyStaticI18n();
 buildPalette(); syncPalette(); syncInputs(); syncMove(); updateDirUI();
 idbGet('anchor').then(h => { if (h && h.name){ anchor = h; updateDirUI(); } });
