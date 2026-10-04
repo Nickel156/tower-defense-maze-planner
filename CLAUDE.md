@@ -5,6 +5,7 @@ Helfer-Tool zum Planen von Mazes in Tower-Defense-Spielen. **Eine einzige, eigen
 ## Dateien im Ordner
 - `index.html` – das ganze Tool (CSS, HTML, JS in einer Datei).
 - `default-map.js` – nennt nur den Namen der Standardkarte (`window.TD_DEFAULT_MAP_NAME = "…";`), die beim Start aus `start-maps.js` geladen wird (siehe unten). Vom Nutzer erzeugt, nicht ohne Auftrag ändern oder löschen.
+- `privacy.html`, `terms.html` – Datenschutzerklärung und Nutzungsbedingungen (DE+EN, eigenständig, ohne Skripte), für die Discord-App-Veröffentlichung. Kontakt = GitHub-Issues-Link des Repos.
 - `start-maps.js` – optionale Auswahlliste „Startkarten“ (`window.TD_START_MAPS = [Karte, …]`, siehe unten). Wird vom Button „Zu Startkarten hinzufügen“ erzeugt.
 - Gespeicherte Karten/Mazes des Nutzers (`*.tdmap.json`, `*.tdmaze.json`) – nicht anfassen.
 - `default-map.jsyxyx` – nicht von uns (vermutlich Sicherungskopie), ignorieren.
