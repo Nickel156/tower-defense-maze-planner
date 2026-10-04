@@ -276,8 +276,8 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
   </div>
 </div>
 <div id="drop" data-en="Drop file here (.tdmap.json / .tdmaze.json)">Datei hier ablegen (.tdmap.json / .tdmaze.json)</div>
-<input type="file" id="fMap" accept=".json,application/json" hidden>
-<input type="file" id="fMaze" accept=".json,application/json" hidden>
+<input type="file" id="fMap" accept=".json,.txt,application/json,text/plain" hidden>
+<input type="file" id="fMaze" accept=".json,.txt,application/json,text/plain" hidden>
 
 <!-- Standardkarte: "default-map.js" im selben Ordner nennt nur den Namen (window.TD_DEFAULT_MAP_NAME) einer Karte aus start-maps.js; fehlt sie, passiert nichts -->
 <script src="default-map.js"></script>
@@ -326,13 +326,13 @@ const EN = {
   'PNG exportiert.':'PNG exported.', 'Karte gespeichert.':'Map saved.', 'Maze gespeichert.':'Maze saved.',
   'Startkarte gespeichert – sie muss als „default-map.js“ neben der HTML-Datei liegen.':'Start map saved – it must be named “default-map.js” and sit next to the HTML file.',
   'Neue leere Karte anlegen? Die aktuelle Karte geht verloren, sofern nicht gespeichert.':'Create a new empty map? The current map will be lost unless saved.',
-  'Diese HTML-Datei':'This HTML file', 'TD-Dateien (.json)':'TD files (.json)', 'PNG-Bild':'PNG image', 'TD-Karte':'TD map', 'TD-Maze':'TD maze',
+  'Diese HTML-Datei':'This HTML file', 'TD-Dateien (.json, .txt)':'TD files (.json, .txt)', 'PNG-Bild':'PNG image', 'TD-Karte':'TD map', 'TD-Maze':'TD maze',
   'Standardkarte gespeichert – die Datei „default-map.js“ neben der HTML-Datei ersetzen.':'Default map saved – replace the file “default-map.js” next to the HTML file.',
   'Standardkarte gespeichert – aber diese Karte fehlt noch in start-maps.js („Zu Startkarten hinzufügen“).':'Default map saved – but this map is not in start-maps.js yet (“Add to start maps”).',
   'Maze kopieren':'Copy maze', 'Karte kopieren':'Copy map', 'Maze einfügen':'Paste maze', 'Karte einfügen':'Paste map',
-  'Kopiere den Text (Strg+C) und bewahre ihn z. B. in einer Textdatei oder Notiz auf. Mit „Maze-Text einfügen“ lädst du ihn wieder.':'Copy the text (Ctrl+C) and keep it, e.g. in a text file or note. Use “Paste maze text” to load it again.',
-  'Kopiere den Text (Strg+C) und bewahre ihn z. B. in einer Textdatei oder Notiz auf. Mit „Karten-Text einfügen“ lädst du ihn wieder.':'Copy the text (Ctrl+C) and keep it, e.g. in a text file or note. Use “Paste map text” to load it again.',
-  'Füge den Text mit Strg+V ein und klicke auf „Laden“.':'Paste the text with Ctrl+V and click “Load”.',
+  'Kopiere den Text (Strg+C). Zum Aufbewahren fügst du ihn in einem Texteditor in eine neue Datei ein und speicherst sie als .txt oder .json (nur dieser Text, sonst nichts). Später lädst du die Datei mit „Maze-Datei laden“ oder fügst den Text mit „Maze-Text einfügen“ wieder ein.':'Copy the text (Ctrl+C). To keep it, paste it into a new file in a text editor and save it as .txt or .json (only this text, nothing else). Later load the file with “Load maze file” or paste the text with “Paste maze text”.',
+  'Kopiere den Text (Strg+C). Zum Aufbewahren fügst du ihn in einem Texteditor in eine neue Datei ein und speicherst sie als .txt oder .json (nur dieser Text, sonst nichts). Später lädst du die Datei mit „Karten-Datei laden“ oder fügst den Text mit „Karten-Text einfügen“ wieder ein.':'Copy the text (Ctrl+C). To keep it, paste it into a new file in a text editor and save it as .txt or .json (only this text, nothing else). Later load the file with “Load map file” or paste the text with “Paste map text”.',
+  'Füge den Text mit Strg+V ein und klicke auf „Laden“. Eine gespeicherte .txt- oder .json-Datei liest du alternativ über den Button „… -Datei laden“ ein.':'Paste the text with Ctrl+V and click “Load”. Alternatively, read a saved .txt or .json file with the “Load … file” button.',
   'In die Zwischenablage kopiert.':'Copied to the clipboard.',
   'Kopieren nicht möglich – bitte Text markieren und mit Strg+C kopieren.':'Copying not possible – please select the text and press Ctrl+C.',
   'Das ist kein gültiger Text.':'This is not valid text.',
@@ -1402,7 +1402,7 @@ async function openFile(opts, input){
   if (st === 'asked') return;
   if (st === 'ok'){
     try{
-      const [h] = await showOpenFilePicker({ startIn:anchor, types:[{ description:t('TD-Dateien (.json)'), accept:{ 'application/json':['.json'] } }] });
+      const [h] = await showOpenFilePicker({ startIn:anchor, types:[{ description:t('TD-Dateien (.json, .txt)'), accept:{ 'application/json':['.json'], 'text/plain':['.txt'] } }] });
       loadFile(await h.getFile(), opts); return;
     } catch (e){ if (e && e.name === 'AbortError') return; console.warn(e); }
   }
@@ -1504,10 +1504,10 @@ async function loadText(){
     fitView(); closeText(); toast('„{0}“ geladen.', map.name);
   } catch (err){ toast('Fehler: {0}', err.message); }
 }
-$('btnCopyMaze').onclick = () => openText('Maze kopieren', 'Kopiere den Text (Strg+C) und bewahre ihn z. B. in einer Textdatei oder Notiz auf. Mit „Maze-Text einfügen“ lädst du ihn wieder.', JSON.stringify(serializeMaze()));
-$('btnCopyMap').onclick = () => openText('Karte kopieren', 'Kopiere den Text (Strg+C) und bewahre ihn z. B. in einer Textdatei oder Notiz auf. Mit „Karten-Text einfügen“ lädst du ihn wieder.', JSON.stringify(serializeMap()));
-$('btnPasteMaze').onclick = () => openText('Maze einfügen', 'Füge den Text mit Strg+V ein und klicke auf „Laden“.', null, { goMaze:true });
-$('btnPasteMap').onclick = () => openText('Karte einfügen', 'Füge den Text mit Strg+V ein und klicke auf „Laden“.', null, { mapOnly:true });
+$('btnCopyMaze').onclick = () => openText('Maze kopieren', 'Kopiere den Text (Strg+C). Zum Aufbewahren fügst du ihn in einem Texteditor in eine neue Datei ein und speicherst sie als .txt oder .json (nur dieser Text, sonst nichts). Später lädst du die Datei mit „Maze-Datei laden“ oder fügst den Text mit „Maze-Text einfügen“ wieder ein.', JSON.stringify(serializeMaze()));
+$('btnCopyMap').onclick = () => openText('Karte kopieren', 'Kopiere den Text (Strg+C). Zum Aufbewahren fügst du ihn in einem Texteditor in eine neue Datei ein und speicherst sie als .txt oder .json (nur dieser Text, sonst nichts). Später lädst du die Datei mit „Karten-Datei laden“ oder fügst den Text mit „Karten-Text einfügen“ wieder ein.', JSON.stringify(serializeMap()));
+$('btnPasteMaze').onclick = () => openText('Maze einfügen', 'Füge den Text mit Strg+V ein und klicke auf „Laden“. Eine gespeicherte .txt- oder .json-Datei liest du alternativ über den Button „… -Datei laden“ ein.', null, { goMaze:true });
+$('btnPasteMap').onclick = () => openText('Karte einfügen', 'Füge den Text mit Strg+V ein und klicke auf „Laden“. Eine gespeicherte .txt- oder .json-Datei liest du alternativ über den Button „… -Datei laden“ ein.', null, { mapOnly:true });
 $('txtCopy').onclick = () => copyText();
 $('txtLoad').onclick = loadText;
 $('txtClose').onclick = closeText;
