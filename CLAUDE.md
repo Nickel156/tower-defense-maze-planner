@@ -28,7 +28,7 @@ Danach `http://localhost:8766/index.html`. Nach dem Test den Server wieder beend
 
 ## Datenmodell
 - `map = { name, w, h, cells: Uint8Array (0 bebaubar, 1 blockiert, 2 fester Weg), starts[], goals[], cps[] }`, Punkte als `{x,y}` (Zellkoordinaten). Mehrere Starts und Ziele erlaubt.
-- `walls`: `Uint32Array w*h`, `0` = frei, sonst **Turm-ID**. `towerSize: Map(id → 1|2|4)`. Türme werden ganz oder gar nicht gesetzt, Entfernen löscht den ganzen Turm (alle Zellen mit gleicher ID).
+- `walls`: `Uint32Array w*h`, `0` = frei, sonst **Turm-ID**. `towerSize: Map(id → 1|2|4)`.  `towerAlt: Set(id)` = 2×2-Türme in der Zweitfarbe (Palette „2×2 ★“, Taste 3, z. B. Carry-Türme; Größe bleibt 2, `settings.alt`). Türme werden ganz oder gar nicht gesetzt, Entfernen löscht den ganzen Turm (alle Zellen mit gleicher ID).
 - `guides[]`: Hilfslinien `{x1,y1,x2,y2}` in Feldeinheiten, Vielfache von 0,5 (Fangraster = doppeltes Raster), Winkel 0°/45°/90°. Gehören zur **Karte** (im Map-Modus zeichnen, im Maze-Modus nur sichtbar).
 - Undo/Redo: `snapshot()`/`restore()` (Zellen, Türme, Marker, Hilfslinien). Verlauf wird beim Moduswechsel und Laden geleert.
 
@@ -42,7 +42,7 @@ Danach `http://localhost:8766/index.html`. Nach dem Test den Server wieder beend
 
 ## Dateiformate (JSON)
 - **Karte** `*.tdmap.json`: `{ format:'td-map', version:1, name, width, height, cells:[Zeilen als Ziffernstrings], starts, goals, checkpoints, guides:[[x1,y1,x2,y2]] }`. Altes Format mit `start`/`goal` (einzeln) und `image` wird weiter gelesen (Bild ignoriert).
-- **Maze** `*.tdmaze.json`: `{ format:'td-maze', version:2, name, map:{…komplette Karte…}, walls:[Zeilen '0'/'1'], towers:[[x,y,n]], settings:{ move, diag, enemyW, margin, tower } }`. Die Karte ist **eingebettet**.
+- **Maze** `*.tdmaze.json`: `{ format:'td-maze', version:2, name, map:{…komplette Karte…}, walls:[Zeilen '0'/'1'], towers:[[x,y,n] oder [x,y,2,1] für 2×2 ★], settings:{ move, diag, enemyW, margin, tower } }`. Die Karte ist **eingebettet**.
 - **Standardkarte** `default-map.js`: `window.TD_DEFAULT_MAP_NAME = "SM_red";` – nur der Kartenname, die Karte selbst steht in `start-maps.js` (Als `.js`, weil Browser bei `file://` kein `fetch` auf Nachbardateien erlauben, `<script src>` aber schon). Beim Start: Karte mit diesem Namen aus der Liste, sonst alte Vollkarte (`window.TD_DEFAULT_MAP`, wird weiter gelesen), sonst erste Karte der Liste; geöffnet im Maze-Reiter. Erzeugt über „Als Standardkarte speichern“ im Map-Modus (schreibt nur den Namen).
 - **Startkarten-Liste** `start-maps.js`: `window.TD_START_MAPS = [Karten-JSON, …];` Erscheint als Gruppe „Startkarten“ (Auswahl + „Gewählte Karte laden“, lädt nur die Karte, bleibt im aktuellen Modus). `startMaps()` = Liste (plus evtl. alte Vollkarte aus `default-map.js`; gleicher Name: `start-maps.js` gewinnt). „Zu Startkarten hinzufügen“ schreibt die komplette Datei neu (bestehende Karten + aktuelle, gleicher Name wird ersetzt); der Nutzer ersetzt die Datei im Projektordner. Fehlt die Datei, bleibt die Gruppe ausgeblendet.
 

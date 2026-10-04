@@ -71,6 +71,7 @@ label.lbl span:first-child{min-width:104px}
 .pal kbd,.hint kbd{margin-left:auto;font:11px ui-monospace,monospace;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px}
 .shapes{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .shapes button{padding:6px 4px}
+#towers{grid-template-columns:repeat(4,1fr)}
 .shapes button.on{border-color:var(--accent2);background:#26344a}
 .stats{display:grid;grid-template-columns:1fr auto;gap:4px 10px}
 .stats div:nth-child(odd){color:var(--muted)}
@@ -218,6 +219,7 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
     <div class="shapes" id="towers">
       <button data-size="1" title="Taste 1" data-en-title="Key 1"><i class="sw2" style="background:#e9d758"></i>1×1</button>
       <button data-size="2" title="Taste 2" data-en-title="Key 2"><i class="sw2" style="background:#ff8a5c"></i>2×2</button>
+      <button data-size="2" data-alt="1" title="Taste 3 – zweites 2×2 in anderer Farbe, z. B. für Carry-Türme oder besondere Positionen" data-en-title="Key 3 – a second 2×2 in another color, e.g. for carry towers or special positions"><i class="sw2" style="background:#ff5cc8"></i>2×2 ★</button>
       <button data-size="4" title="Taste 4" data-en-title="Key 4"><i class="sw2" style="background:#b58cff"></i>4×4</button>
     </div>
     <div class="note" data-en="Click or drag = place towers along a line, right click = remove whole tower. Towers are always placed completely or not at all.">Klicken oder Ziehen = Türme entlang einer Linie setzen, Rechtsklick = ganzen Turm entfernen. Türme werden immer komplett oder gar nicht gesetzt.</div>
@@ -241,6 +243,7 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
     <div class="stats">
       <div data-en='<i class="sw2" style="background:#e9d758"></i>Towers 1×1'><i class="sw2" style="background:#e9d758"></i>Türme 1×1</div><div id="sT1">0</div>
       <div data-en='<i class="sw2" style="background:#ff8a5c"></i>Towers 2×2'><i class="sw2" style="background:#ff8a5c"></i>Türme 2×2</div><div id="sT2">0</div>
+      <div data-en='<i class="sw2" style="background:#ff5cc8"></i>Towers 2×2 ★'><i class="sw2" style="background:#ff5cc8"></i>Türme 2×2 ★</div><div id="sT2b">0</div>
       <div data-en='<i class="sw2" style="background:#b58cff"></i>Towers 4×4'><i class="sw2" style="background:#b58cff"></i>Türme 4×4</div><div id="sT4">0</div>
       <div data-en="Towers total">Türme gesamt</div><div id="sTowers">0</div>
       <div data-en="Path length">Weglänge</div><div id="sLen">–</div>
@@ -302,7 +305,7 @@ const EN = {
   'Z':'G',
   'Breite: {0}':'Width: {0}', 'Wandabstand: {0}':'Wall gap: {0}',
   'Ziehen: Fläche zeichnen · Rechtsklick: zurücksetzen · 1–6: Feldtyp · H: Hilfslinie':'Drag: draw area · Right click: reset · 1–6: cell type · H: guide line',
-  'Klicken/Ziehen: Türme setzen · Rechtsklick: entfernen · 1/2/4: Turmgröße · P: Weg':'Click/drag: place towers · Right click: remove · 1/2/4: tower size · P: path',
+  'Klicken/Ziehen: Türme setzen · Rechtsklick: entfernen · 1/2/3/4: Turmgröße · P: Weg':'Click/drag: place towers · Right click: remove · 1/2/3/4: tower size · P: path',
   'Spalte {0} · Zeile {1} · {2}':'Column {0} · Row {1} · {2}',
   'Alle einklappen':'Collapse all', 'Alle ausklappen':'Expand all',
   'noch nicht festgelegt':'not set yet', 'Standard':'default',
@@ -375,7 +378,7 @@ const TILES = [
   { id:'goal',  key:'5', name:'Ziel',       hint:'Zielpunkt der Gegner. Mehrere möglich, nochmal klicken entfernt.',  color:C.goal },
   { id:'cp',    key:'6', name:'Checkpoint', hint:'Reihenfolge = Setz-Reihenfolge. Nochmal klicken entfernt.', color:C.cp },
 ];
-const settings = { tile:'block', shape:'line', brush:1, tower:2, move:'any', enemyW:.5, margin:.2, prevent:true, grid:true, showPath:true,
+const settings = { tile:'block', shape:'line', brush:1, tower:2, move:'any', enemyW:.5, margin:.2, prevent:true, grid:true, showPath:true, alt:false,
                    sim:false, showGuides:true, resizeX:'right', resizeY:'bottom' };
 let guides = [];                     // Hilfslinien {x1,y1,x2,y2} in Feldeinheiten (Vielfache von 0,5)
 let mode = 'maze';                   // das Tool startet immer im Reiter „Maze zeichnen“
@@ -383,7 +386,8 @@ let map = newMap(30, 20, t('Neue Karte'));
 let walls = new Uint32Array(map.w * map.h);   // 0 = frei, sonst Turm-ID
 let nextId = 1;
 const towerSize = new Map();          // Turm-ID -> Größe (1, 2, 4)
-const TOWER_COL = { 1:'#e9d758', 2:'#ff8a5c', 4:'#b58cff' };   // Farbe je Turmgröße
+const towerAlt = new Set();           // IDs der 2×2-Türme in der Zweitfarbe (z. B. Carry-Türme), Größe bleibt 2
+const TOWER_COL = { 1:'#e9d758', 2:'#ff8a5c', 4:'#b58cff', alt:'#ff5cc8' };   // Farbe je Turmgröße
 let route = null, baseRoute = null, pathMask = new Uint8Array(0);
 let history = [], future = [];
 
@@ -755,6 +759,7 @@ function applyTowers(stamps){
     if (s.some(i => walls[i] || map.cells[i] !== FREE)) continue;
     const id = nextId++;
     towerSize.set(id, settings.tower);
+    if (settings.alt && settings.tower === 2) towerAlt.add(id);
     for (const i of s) walls[i] = id;
     if (settings.prevent && s.some(i => pathMask[i])){
       const r = computeRoute(true);
@@ -764,6 +769,7 @@ function applyTowers(stamps){
       if (cut.length){
         for (const i of s) walls[i] = 0;
         towerSize.delete(id);
+        towerAlt.delete(id);
         if (Date.now() - lastBlockToast > 1500){
           if (r.ok) toast('Nicht möglich: {0} würde kein Ziel mehr erreichen.', cut.map(u => u.name).join(', '));
           else toast('Nicht möglich: der Weg würde komplett versperrt.');
@@ -925,7 +931,7 @@ function renderWorld(c, s, x0, y0, x1, y1, live){
       const id = walls[y*w+x]; if (!id) continue;
       const L = wid(x-1,y) !== id, R = wid(x+1,y) !== id, T = wid(x,y-1) !== id, B = wid(x,y+1) !== id;
       const rx = x + (L ? g : 0), ry = y + (T ? g : 0), rw = x + 1 - (R ? g : 0) - rx, rh = y + 1 - (B ? g : 0) - ry;
-      c.fillStyle = TOWER_COL[towerSize.get(id) || 1] || C.wall; c.fillRect(rx, ry, rw, rh);
+      c.fillStyle = (towerAlt.has(id) ? TOWER_COL.alt : TOWER_COL[towerSize.get(id) || 1]) || C.wall; c.fillRect(rx, ry, rw, rh);
       if (T){ c.fillStyle = 'rgba(255,255,255,.28)'; c.fillRect(rx, ry, rw, .14); }
       if (B){ c.fillStyle = 'rgba(0,0,0,.22)'; c.fillRect(rx, ry+rh-.14, rw, .14); }
     }
@@ -1125,7 +1131,7 @@ window.addEventListener('keydown', e => {
   if (k === 'p' && mode === 'maze'){ $('chkPath').click(); return; }
   if (k === 'h' && mode === 'map'){ $('btnGuideTool').click(); return; }
   if (mode === 'map'){ const tl = TILES.find(x => x.key === k); if (tl){ leaveGuide(); settings.tile = tl.id; syncPalette(); } }
-  else if (['1','2','4'].includes(k)){ settings.tower = +k; syncPalette(); }
+  else if (['1','2','3','4'].includes(k)){ settings.alt = k === '3'; settings.tower = k === '3' ? 2 : +k; syncPalette(); }
 });
 window.addEventListener('keyup', e => { if (e.code === 'Space') spaceDown = false; });
 
@@ -1136,17 +1142,17 @@ function buildPalette(){
   $('palette').innerHTML = TILES.map(tl =>
     `<button data-tile="${tl.id}" title="${t(tl.hint)}"><span class="sw" style="background:${tl.color}"></span>${t(tl.name)}<kbd>${tl.key}</kbd></button>`).join('');
   $('palette').onclick = e => { const b = e.target.closest('button'); if (b){ leaveGuide(); settings.tile = b.dataset.tile; syncPalette(); } };
-  $('towers').onclick = e => { const b = e.target.closest('button'); if (b){ settings.tower = +b.dataset.size; syncPalette(); } };
+  $('towers').onclick = e => { const b = e.target.closest('button'); if (b){ settings.tower = +b.dataset.size; settings.alt = !!b.dataset.alt; syncPalette(); } };
 }
 function syncPalette(){
   document.querySelectorAll('#palette button').forEach(b => b.classList.toggle('on', b.dataset.tile === settings.tile));
-  document.querySelectorAll('#towers button').forEach(b => b.classList.toggle('on', +b.dataset.size === settings.tower));
+  document.querySelectorAll('#towers button').forEach(b => b.classList.toggle('on', +b.dataset.size === settings.tower && !!b.dataset.alt === settings.alt));
   $('btnGuideTool').classList.toggle('on', settings.shape === 'guide');
   $('palette').classList.toggle('dim', settings.shape === 'guide');
   dirty = true;
   $('stKeys').textContent = mode === 'map'
     ? t('Ziehen: Fläche zeichnen · Rechtsklick: zurücksetzen · 1–6: Feldtyp · H: Hilfslinie')
-    : t('Klicken/Ziehen: Türme setzen · Rechtsklick: entfernen · 1/2/4: Turmgröße · P: Weg');
+    : t('Klicken/Ziehen: Türme setzen · Rechtsklick: entfernen · 1/2/3/4: Turmgröße · P: Weg');
 }
 function syncInputs(){
   $('inW').value = map.w; $('inH').value = map.h; $('mapName').value = map.name;
@@ -1164,9 +1170,9 @@ function updateStats(){
   if (mode !== 'maze') return;
   const ids = new Set();
   for (let i = 0; i < walls.length; i++) if (walls[i]) ids.add(walls[i]);
-  const cnt = { 1:0, 2:0, 4:0 };
-  for (const id of ids) cnt[towerSize.get(id) || 1]++;
-  $('sT1').textContent = cnt[1]; $('sT2').textContent = cnt[2]; $('sT4').textContent = cnt[4];
+  const cnt = { 1:0, 2:0, 4:0, alt:0 };
+  for (const id of ids) cnt[towerAlt.has(id) ? "alt" : (towerSize.get(id) || 1)]++;
+  $('sT1').textContent = cnt[1]; $('sT2').textContent = cnt[2]; $('sT4').textContent = cnt[4]; $('sT2b').textContent = cnt.alt;
   $('sTowers').textContent = ids.size;
   const ok = route && route.ok, bok = baseRoute && baseRoute.ok;
   $('sLen').textContent = ok ? fmt(route.len) : '–';
@@ -1211,7 +1217,7 @@ function setMode(m){
 /* ---------- Karte ändern ---------- */
 function setMap(m, w2){
   map = m; walls = w2 || new Uint32Array(m.w*m.h); guides = m.guides || [];
-  if (!w2) towerSize.clear();
+  if (!w2){ towerSize.clear(); towerAlt.clear(); }
   history = []; future = []; updateUndoUI();
   syncInputs(); recompute(); fitView();
 }
@@ -1279,7 +1285,8 @@ function towerList(){          // vollständige n×n-Türme als [x, y, n]; Rest 
     if (!t){ t = { x0:x, y0:y, x1:x, y1:y, c:0 }; b.set(id, t); }
     t.x0 = Math.min(t.x0, x); t.y0 = Math.min(t.y0, y); t.x1 = Math.max(t.x1, x); t.y1 = Math.max(t.y1, y); t.c++;
   }
-  return [...b.values()].filter(t => { const w = t.x1-t.x0+1; return w === t.y1-t.y0+1 && t.c === w*w; }).map(t => [t.x0, t.y0, t.x1-t.x0+1]);
+  return [...b.entries()].filter(([, t]) => { const w = t.x1-t.x0+1; return w === t.y1-t.y0+1 && t.c === w*w; })
+    .map(([id, t]) => { const n = t.x1-t.x0+1; return towerAlt.has(id) && n === 2 ? [t.x0, t.y0, n, 1] : [t.x0, t.y0, n]; });   // 4. Wert 1 = 2×2 in der Zweitfarbe
 }
 function serializeMaze(){
   return { format:'td-maze', version:2, name:map.name, map:serializeMap(),
@@ -1312,17 +1319,17 @@ async function loadObject(o, mapOnly){
   if (o && o.format === 'td-maze'){
     const m = parseMap(o.map);
     let w2 = new Uint32Array(m.w*m.h), id = 1;
-    towerSize.clear();
+    towerSize.clear(); towerAlt.clear(); settings.alt = false;
     if (!mapOnly){
       if (!Array.isArray(o.walls) || o.walls.length !== m.h) throw new Error(t('Maze-Daten beschädigt.'));
       const pending = new Uint8Array(m.w*m.h);
       o.walls.forEach((row, y) => { for (let x = 0; x < m.w; x++) if (row[x] === '1') pending[y*m.w+x] = 1; });
       for (const t of (Array.isArray(o.towers) ? o.towers : [])){
-        const [tx, ty, n] = Array.isArray(t) ? t : [];
+        const [tx, ty, n, alt] = Array.isArray(t) ? t : [];
         if (![tx, ty, n].every(Number.isInteger) || ![1, 2, 4].includes(n) || tx < 0 || ty < 0 || tx+n > m.w || ty+n > m.h) continue;
         const cells = []; for (let dy = 0; dy < n; dy++) for (let dx = 0; dx < n; dx++) cells.push((ty+dy)*m.w+tx+dx);
         if (!cells.every(i => pending[i])) continue;
-        cells.forEach(i => { w2[i] = id; pending[i] = 0; }); towerSize.set(id, n); id++;
+        cells.forEach(i => { w2[i] = id; pending[i] = 0; }); towerSize.set(id, n); if (alt === 1 && n === 2) towerAlt.add(id); id++;
       }
       for (let i = 0; i < pending.length; i++) if (pending[i]){ towerSize.set(id, 1); w2[i] = id++; }
       if (o.settings){
