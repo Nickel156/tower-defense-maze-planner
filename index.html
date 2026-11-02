@@ -865,7 +865,9 @@ function fitScale(){                      // Zoomstufe, bei der die ganze Karte 
 }
 function constrainView(){                 // Zoom nicht kleiner als „Karte komplett sichtbar“, Karte bleibt im Bild
   const W = cv.width/dpr, H = cv.height/dpr, fs = fitScale();
-  if (view.s < fs) view.s = fs;
+  if (!(view.s >= fs)) view.s = fs;      // auch bei NaN (z. B. künstliche Wheel-Ereignisse von Browser-Erweiterungen)
+  if (!isFinite(view.ox)) view.ox = RUL;
+  if (!isFinite(view.oy)) view.oy = RUL;
   const cw = map.w*view.s, ch = map.h*view.s, aw = W-RUL, ah = H-RUL;
   view.ox = cw + 2*VIEW_PAD <= aw ? RUL + (aw-cw)/2 : clamp(view.ox, W-VIEW_PAD-cw, RUL+VIEW_PAD);
   view.oy = ch + 2*VIEW_PAD <= ah ? RUL + (ah-ch)/2 : clamp(view.oy, H-VIEW_PAD-ch, RUL+VIEW_PAD);
@@ -1065,6 +1067,7 @@ function loop(t){
 cv.addEventListener('contextmenu', e => e.preventDefault());
 cv.addEventListener('wheel', e => {
   e.preventDefault();
+  if (!isFinite(e.deltaY) || !isFinite(e.clientX) || !isFinite(e.clientY)) return;   // Ereignisse ohne Werte ignorieren
   const r = cv.getBoundingClientRect(), mx = e.clientX-r.left, my = e.clientY-r.top;
   const fs = fitScale(), ns = clamp(view.s * Math.exp(-e.deltaY*.0015), fs, Math.max(90, fs));
   view.ox = mx-(mx-view.ox)*ns/view.s; view.oy = my-(my-view.oy)*ns/view.s; view.s = ns; constrainView();
