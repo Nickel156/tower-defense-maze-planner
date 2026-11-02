@@ -1065,13 +1065,17 @@ function loop(t){
 
 /* ---------- Eingabe ---------- */
 cv.addEventListener('contextmenu', e => e.preventDefault());
-cv.addEventListener('wheel', e => {
+// Am Fenster in der Capture-Phase statt an der Karte: Browser-Erweiterungen (z. B. Logitech SetPoint in Firefox)
+// fangen das echte Wheel-Ereignis vor der Karte ab und schicken eine Attrappe ohne deltaY/clientX.
+addEventListener('wheel', e => {
+  if (e.target !== cv) return;
   e.preventDefault();
-  if (!isFinite(e.deltaY) || !isFinite(e.clientX) || !isFinite(e.clientY)) return;   // Ereignisse ohne Werte ignorieren
+  if (!isFinite(e.deltaY) || !isFinite(e.clientX) || !isFinite(e.clientY)) return;   // Attrappen ohne Werte ignorieren
+  e.stopPropagation();
   const r = cv.getBoundingClientRect(), mx = e.clientX-r.left, my = e.clientY-r.top;
   const fs = fitScale(), ns = clamp(view.s * Math.exp(-e.deltaY*.0015), fs, Math.max(90, fs));
   view.ox = mx-(mx-view.ox)*ns/view.s; view.oy = my-(my-view.oy)*ns/view.s; view.s = ns; constrainView();
-}, { passive:false });
+}, { capture:true, passive:false });
 cv.addEventListener('pointerdown', e => {
   if (e.button === 1 || (e.button === 0 && spaceDown)){
     e.preventDefault(); cv.setPointerCapture(e.pointerId);
