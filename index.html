@@ -669,6 +669,14 @@ function computeRoute(useWalls){
   const union = new Set(); for (const r of all) for (const i of r.cells) union.add(i);   // alle Felder, die einen Start-Weg beeinflussen
   return { ok:true, routes:[bestRoute], cells:[...union], len:bestRoute.len, unreachable };
 }
+/* Ereignisse für Zusatzskripte (siehe window.TD am Dateiende): 'change' (Karte/Maze/Einstellung evtl. geändert, zusammengefasst), 'load', 'mode', 'lang' */
+const tdListeners = {};
+function tdEmit(ev, arg){ for (const fn of (tdListeners[ev] || []).slice()){ try{ fn(arg); } catch (e){ console.error(e); } } }
+let tdChangeQueued = false;
+function tdChanged(){
+  if (tdChangeQueued || !(tdListeners.change || []).length) return;
+  tdChangeQueued = true; setTimeout(() => { tdChangeQueued = false; tdEmit('change'); }, 0);
+}
 let baseCache = null;
 function recompute(){
   if (mode === 'maze'){
@@ -681,7 +689,7 @@ function recompute(){
   } else { route = null; baseRoute = null; }
   pathMask = new Uint8Array(map.w * map.h);
   if (route && route.ok) for (const i of route.cells) pathMask[i] = 1;
-  updateStats(); updateBanner(); dirty = true;
+  updateStats(); updateBanner(); dirty = true; tdChanged();
 }
 
 /* ---------- Zeichenoperationen ---------- */
@@ -1213,7 +1221,7 @@ function setMode(m){
   settings.shape = m === 'map' ? 'rect' : 'line';                 // Map: immer Fläche, Maze: immer Linie
   if (m === 'maze') sanitizeWalls();
   history = []; future = []; updateUndoUI();
-  syncInputs(); syncPalette(); recompute();
+  syncInputs(); syncPalette(); recompute(); tdEmit('mode', m);
 }
 
 /* ---------- Karte ändern ---------- */
@@ -1344,10 +1352,10 @@ async function loadObject(o, mapOnly){
     }
     nextId = id;
     if (!m.guides.length) m.guides = parseGuides(o.guides, m.w, m.h);   // ältere Maze-Dateien
-    setMap(m, w2); return mapOnly ? 'map' : 'maze';
+    setMap(m, w2); tdEmit('load', { kind: mapOnly ? 'map' : 'maze' }); return mapOnly ? 'map' : 'maze';
   }
   if (o && o.format === 'td-map'){
-    setMap(parseMap(o)); return 'map';
+    setMap(parseMap(o)); tdEmit('load', { kind:'map' }); return 'map';
   }
   throw new Error(t('Das ist keine TD-Map/Maze-Datei.'));
 }
@@ -1417,12 +1425,17 @@ async function openFile(opts, input){
   }
   input.click();
 }
-function exportPng(){
-  const cs = Math.max(6, Math.min(40, Math.floor(4000 / Math.max(map.w, map.h))));
+function renderPng(maxSide){            // Promise<Blob>; ohne Angabe wie der PNG-Export (bis 4000 px, 6–40 px je Feld), sonst höchstens maxSide px
+  const cs = maxSide ? Math.max(1, Math.min(40, Math.floor(maxSide / Math.max(map.w, map.h))))
+                     : Math.max(6, Math.min(40, Math.floor(4000 / Math.max(map.w, map.h))));
   const c = document.createElement('canvas'); c.width = map.w*cs; c.height = map.h*cs;
   const g = c.getContext('2d'); g.scale(cs, cs);
   renderWorld(g, cs, 0, 0, map.w, map.h, false);
-  c.toBlob(async b => { if (await saveAs(safe(map.name) + '-maze.png', b, t('PNG-Bild'), 'image/png', '.png')) toast('PNG exportiert.'); });
+  return new Promise(res => c.toBlob(res, 'image/png'));
+}
+async function exportPng(){
+  const b = await renderPng();
+  if (await saveAs(safe(map.name) + '-maze.png', b, t('PNG-Bild'), 'image/png', '.png')) toast('PNG exportiert.');
 }
 
 /* ---------- Verdrahtung ---------- */
@@ -1573,11 +1586,11 @@ window.addEventListener('drop', e => {
 });
 
 /* ---------- Einklappbare Gruppen in der linken Leiste ---------- */
-(function(){
+const sectionApi = (function(){
   const store = { get(k){ try{ return localStorage.getItem(k); } catch (e){ return null; } },
                   set(k, v){ try{ localStorage.setItem(k, v); } catch (e){} } };
   const secs = [];
-  document.querySelectorAll('aside > section').forEach(sec => {
+  function wire(sec){
     const h = sec.querySelector(':scope > h3'); if (!h) return;
     const body = document.createElement('div'), inner = document.createElement('div');
     body.className = 'sec-body'; inner.className = 'sec-in'; body.appendChild(inner);
@@ -1594,12 +1607,14 @@ window.addEventListener('drop', e => {
     h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); h.click(); } };
     set(store.get(key) === '1', false);
     secs.push({ sec, set });
-  });
+  }
+  document.querySelectorAll('aside > section').forEach(wire);
   const btn = $('collapseAll');
   function syncAll(){ btn.dataset.allCollapsed = secs.every(s => s.sec.classList.contains('collapsed')) ? '1' : ''; btn.textContent = btn.dataset.allCollapsed ? t('Alle ausklappen') : t('Alle einklappen'); }
   window.syncCollapseBtn = syncAll;
   btn.onclick = () => { const collapse = !btn.dataset.allCollapsed; secs.forEach(s => s.set(collapse)); syncAll(); };
   syncAll();
+  return { wire, syncAll };
 })();
 
 /* ---------- Start ---------- */
@@ -1607,6 +1622,7 @@ function setLang(l){
   lang = l; try{ localStorage.setItem('tdplaner.lang', l); } catch (e){}
   applyStaticI18n(); buildPalette(); syncPalette(); syncMove(); syncInputs(); updateDirUI(); updatePos(); recompute();
   if (window.syncCollapseBtn) window.syncCollapseBtn();
+  tdEmit('lang', l);
 }
 $('langSeg').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.lang !== lang) setLang(b.dataset.lang); };
 /* Discord-Aktivität (Seite läuft über *.discordsays.com): dort gibt es keine Downloads → Datei-Speichern ausblenden, Text-Export bleibt */
@@ -1624,6 +1640,46 @@ if (firstMap){
 } updateUndoUI(); resizeCanvas(); fitView(); recompute();
 requestAnimationFrame(t => { lastT = t; loop(t); });
 window.addEventListener('load', () => { resizeCanvas(); fitView(); });
+
+/* ---------- Erweiterungs-Schnittstelle (window.TD) ----------
+   Für Zusatzskripte, z. B. die Website mit Konto und Cloud-Speicher (eigenes Repo, lädt ein eigenes Skript nach diesem).
+   Das Tool selbst und die Discord-Aktivität laden keine Zusatzskripte und verhalten sich dadurch nicht anders.
+   Nur abwärtskompatibel erweitern; bei neuen Funktionen `version` erhöhen. Formate: siehe „Dateiformate“ (td-map/td-maze). */
+window.TD = {
+  version: 1,
+  inDiscord,
+  get lang(){ return lang; },                   // 'de' | 'en'
+  get mode(){ return mode; },                   // 'map' | 'maze'
+  getMaze: () => serializeMaze(),               // aktuelles Maze als td-maze-Objekt (Karte eingebettet)
+  getMap: () => serializeMap(),                 // aktuelle Karte als td-map-Objekt
+  getInfo(){                                    // Kennzahlen für Listen; Weglängen sind nur im Maze-Modus gefüllt, sonst null
+    const ids = new Set(); for (let i = 0; i < walls.length; i++) if (walls[i]) ids.add(walls[i]);
+    const r2 = v => Math.round(v*100)/100;
+    return { name:map.name, width:map.w, height:map.h, towers:ids.size,
+             pathLength: route && route.ok ? r2(route.len) : null, baseLength: baseRoute && baseRoute.ok ? r2(baseRoute.len) : null };
+  },
+  getPng: maxSide => renderPng(maxSide),        // Promise<Blob> (PNG); maxSide = größte Kantenlänge in px, z. B. 320 für ein Vorschaubild
+  async load(o, opts = {}){                     // Objekt (td-map/td-maze) laden; opts.mapOnly = nur die Karte; gibt 'map' | 'maze' zurück, wirft bei Fehlern
+    const kind = await loadObject(o, opts.mapOnly);
+    if (opts.goMaze && mode !== 'maze') setMode('maze');
+    else if (kind === 'maze' && mode !== 'maze') setMode('maze');
+    else setMode(mode);
+    fitView(); return kind;
+  },
+  toast: (text, ...args) => toast(text, ...args),   // Meldung unten; Text wird nur übersetzt, wenn er in EN steht
+  on(ev, fn){ (tdListeners[ev] = tdListeners[ev] || []).push(fn); },                       // 'change' | 'load' | 'mode' | 'lang'
+  off(ev, fn){ tdListeners[ev] = (tdListeners[ev] || []).filter(f => f !== fn); },
+  addSection({ id, title, en, mode:only, before } = {}){   // neue einklappbare Gruppe in der linken Leiste; gibt das Inhalts-Element zurück
+    const sec = document.createElement('section'); if (id) sec.id = id;
+    if (only === 'map' || only === 'maze') sec.className = 'only-' + only;
+    const h = document.createElement('h3'); h.textContent = title; if (en) h.dataset.en = en;
+    sec.appendChild(h);
+    const aside = document.querySelector('aside'), ref = before && document.getElementById(before);
+    aside.insertBefore(sec, ref && ref.parentNode === aside ? ref : $('collapseAll').nextSibling);   // ohne `before`: ganz oben
+    sectionApi.wire(sec); applyStaticI18n(); sectionApi.syncAll();
+    return sec.querySelector('.sec-in');
+  }
+};
 </script>
 </body>
 </html>
