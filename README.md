@@ -53,6 +53,12 @@ Du hast eine eigene Karte, die dauerhaft als Startkarte ins Tool soll? Melde dic
 
 Fragen, Fehler, Wünsche: bitte als [Issue](../../issues) melden.
 
+## Web-Version
+
+Es gibt auch eine Web-Version mit mehr Funktionen: Anmeldung mit Discord, Mazes und Karten in der Cloud
+speichern, mit anderen teilen, kopieren und kommentieren. Wenn du sie selbst hosten möchtest, melde dich gern
+per [Issue](../../issues).
+
 ---
 
 <a id="english"></a>
@@ -76,5 +82,11 @@ Open `index.html` in a browser. Keyboard shortcuts are listed in the status bar 
 Have a map you would like added permanently as a start map? Feel free to contact me via an [issue](../../issues) with the map (`*.tdmap.json` or copied as text) and I will add it to `start-maps.js`.
 
 Questions, bugs, ideas: please open an [issue](../../issues).
+
+## Web version
+
+There is also a web version with more features: sign-in with Discord, saving mazes and maps to the cloud,
+sharing them with others, copying and commenting. If you would like to host it yourself, feel free to contact me
+via an [issue](../../issues).
 
 ---
