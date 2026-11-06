@@ -85,6 +85,7 @@ label.lbl span:first-child{min-width:104px}
 #cv{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}
 #cv.pan{cursor:grabbing}
 body.readonly #cv:not(.pan){cursor:grab}
+body.readonly .no-readonly{display:none!important}   /* Nur-Ansicht: Bearbeiten, Laden und Weg-Parameter ausblenden */
 #banner{position:absolute;left:34px;top:34px;right:14px;pointer-events:none;display:flex}
 #banner div{background:rgba(20,24,30,.92);border:1px solid var(--line);border-left:4px solid var(--warn);padding:7px 12px;border-radius:6px;max-width:560px}
 #banner div.err{border-left-color:var(--danger)}
@@ -118,8 +119,8 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
   <div class="seg sm" id="langSeg" title="Sprache / Language">
     <button data-lang="de">DE</button><button data-lang="en">EN</button>
   </div>
-  <button id="btnUndo" title="Rückgängig (Strg+Z)" data-en-title="Undo (Ctrl+Z)"><span>↶</span> <span class="lbl" data-en="Undo">Rückgängig</span></button>
-  <button id="btnRedo" title="Wiederholen (Strg+Y)" data-en-title="Redo (Ctrl+Y)"><span>↷</span> <span class="lbl" data-en="Redo">Wiederholen</span></button>
+  <button id="btnUndo" class="no-readonly" title="Rückgängig (Strg+Z)" data-en-title="Undo (Ctrl+Z)"><span>↶</span> <span class="lbl" data-en="Undo">Rückgängig</span></button>
+  <button id="btnRedo" class="no-readonly" title="Wiederholen (Strg+Y)" data-en-title="Redo (Ctrl+Y)"><span>↷</span> <span class="lbl" data-en="Redo">Wiederholen</span></button>
   <button id="btnFit" title="Ansicht einpassen (Pos1)" data-en-title="Fit view (Home)"><span>⤢</span> <span class="lbl" data-en="Fit view">Ansicht einpassen</span></button>
 </header>
 
@@ -131,13 +132,13 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
     <h3 data-en="Map">Karte</h3>
     <div class="row"><input type="text" id="mapName" placeholder="Name der Karte" data-en-placeholder="Map name" maxlength="60"></div>
     <div class="row">
-      <button id="btnNew" data-en="New">Neu</button>
+      <button id="btnNew" class="no-readonly" data-en="New">Neu</button>
       <button id="btnSaveMap" class="primary no-discord" data-en="💾 Save map file">💾 Karten-Datei speichern</button>
-      <button id="btnLoadMap" data-en="📂 Load map file">📂 Karten-Datei laden</button>
+      <button id="btnLoadMap" class="no-readonly" data-en="📂 Load map file">📂 Karten-Datei laden</button>
     </div>
     <div class="row">
       <button id="btnCopyMap" title="Karte als Text anzeigen/kopieren – wenn Speichern nicht geht (z. B. in der Discord-Aktivität)" data-en-title="Show/copy the map as text – for when saving is not possible (e.g. in the Discord activity)" data-en="📋 Copy map text">📋 Karten-Text kopieren</button>
-      <button id="btnPasteMap" title="Karte aus Text laden" data-en-title="Load a map from text" data-en="📥 Paste map text">📥 Karten-Text einfügen</button>
+      <button id="btnPasteMap" class="no-readonly" title="Karte aus Text laden" data-en-title="Load a map from text" data-en="📥 Paste map text">📥 Karten-Text einfügen</button>
     </div>
     <div class="note only-discord" data-en="In Discord, downloads are not possible. Use “Copy map text” to keep a map and “Paste map text” to load it again.">In Discord sind Downloads nicht möglich. Nutze „Karten-Text kopieren“, um eine Karte aufzubewahren, und „Karten-Text einfügen“, um sie wieder zu laden.</div>
     <div class="no-discord">
@@ -150,7 +151,7 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
   <section class="only-maze">
     <h3 data-en="Files">Dateien</h3>
     <div class="note" style="margin:0 0 8px"><span data-en="Map:">Karte:</span> <b id="curMap">–</b></div>
-    <div class="row">
+    <div class="row no-readonly">
       <button id="btnLoadMap2" class="primary" data-en="📂 Load map file">📂 Karten-Datei laden</button>
       <button id="btnLoadMaze" data-en="📂 Load maze file">📂 Maze-Datei laden</button>
     </div>
@@ -160,18 +161,18 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
     </div>
     <div class="row">
       <button id="btnCopyMaze" title="Maze als Text anzeigen/kopieren – wenn Speichern nicht geht (z. B. in der Discord-Aktivität)" data-en-title="Show/copy the maze as text – for when saving is not possible (e.g. in the Discord activity)" data-en="📋 Copy maze text">📋 Maze-Text kopieren</button>
-      <button id="btnPasteMaze" title="Maze aus Text laden" data-en-title="Load a maze from text" data-en="📥 Paste maze text">📥 Maze-Text einfügen</button>
+      <button id="btnPasteMaze" class="no-readonly" title="Maze aus Text laden" data-en-title="Load a maze from text" data-en="📥 Paste maze text">📥 Maze-Text einfügen</button>
     </div>
     <div class="note only-discord" data-en="In Discord, downloads are not possible (no “Save maze file”, no PNG). Use “Copy maze text” to keep a maze and “Paste maze text” to load it again.">In Discord sind Downloads nicht möglich (kein „Maze-Datei speichern“, kein PNG). Nutze „Maze-Text kopieren“, um ein Maze aufzubewahren, und „Maze-Text einfügen“, um es wieder zu laden.</div>
     <div class="note dirBox no-discord" style="display:none"><span data-en="Dialogs open in:">Dialoge öffnen in:</span> <b class="dirName">–</b> <button class="pickDir" style="padding:1px 8px;font-size:12px" data-en="change">ändern</button></div>
   </section>
-  <section id="secStart" style="display:none">
+  <section id="secStart" class="no-readonly" style="display:none">
     <h3 data-en="Start maps">Startkarten</h3>
     <div class="row"><select id="selStart"></select></div>
     <div class="row"><button id="btnLoadStart" class="primary" data-en="Load selected map">Gewählte Karte laden</button></div>
     <div class="note" data-en="Ready-made maps. Your own map can still be drawn or loaded from a file.">Fertige Karten. Eine eigene Karte kannst du weiterhin zeichnen oder aus einer Datei laden.</div>
   </section>
-  <section>
+  <section class="no-readonly">
     <h3 data-en="Mirror map">Karte spiegeln</h3>
     <div class="row">
       <button id="btnMirrorH" title="Links und rechts vertauschen" data-en-title="Swap left and right" data-en="↔ Horizontal">↔ Horizontal</button>
@@ -179,7 +180,7 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
     </div>
     <div class="note only-maze" data-en="Towers are mirrored too.">Türme werden mitgespiegelt.</div>
   </section>
-  <section class="only-map">
+  <section class="only-map no-readonly">
     <h3 data-en="Grid (cells)">Raster (Felder)</h3>
     <div class="row">
       <input type="number" id="inW" min="5" max="300" value="30"> <span>×</span>
@@ -196,12 +197,12 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
     </div>
     <div class="note" data-en="The existing content stays on the opposite side. When shrinking, it is cut off where the change happens.">Der bisherige Inhalt bleibt auf der gegenüberliegenden Seite stehen. Beim Verkleinern wird dort abgeschnitten, wo die Änderung stattfindet.</div>
   </section>
-  <section class="only-map">
+  <section class="only-map no-readonly">
     <h3 data-en="Cell type">Feldtyp</h3>
     <div class="pal" id="palette"></div>
     <div class="note" data-en="Right click = reset cell to “Buildable”.">Rechtsklick = Feld zurück auf „Bebaubar“.</div>
   </section>
-  <section class="only-maze">
+  <section class="only-maze no-readonly">
     <h3 data-en="Path formation parameters">Parameter Wegbildung</h3>
     <label class="chk"><input type="checkbox" id="chkPrevent" checked> <span data-en="Prevent complete path blocking">Kompletten Wegblock verhindern</span></label>
     <label class="lbl" style="margin-top:4px"><span style="min-width:0" data-en="Enemy movement">Gegner-Bewegung</span></label>
@@ -216,7 +217,7 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
       <div class="note" id="rNote"></div>
     </div>
   </section>
-  <section class="only-maze">
+  <section class="only-maze no-readonly">
     <h3 data-en="Tower size">Turmgröße</h3>
     <div class="shapes" id="towers">
       <button data-size="1" title="Taste 1" data-en-title="Key 1"><i class="sw2" style="background:#e9d758"></i>1×1</button>
@@ -227,7 +228,7 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
     <div class="note" data-en="Click or drag = place towers along a line, right click = remove whole tower. Towers are always placed completely or not at all.">Klicken oder Ziehen = Türme entlang einer Linie setzen, Rechtsklick = ganzen Turm entfernen. Türme werden immer komplett oder gar nicht gesetzt.</div>
     <div class="row" style="margin-top:10px"><button id="btnClearWalls" class="danger" data-en="Delete all towers">Alle Türme löschen</button></div>
   </section>
-  <section class="only-map">
+  <section class="only-map no-readonly">
     <h3 data-en="Guide lines">Hilfslinien</h3>
     <div class="row"><button id="btnGuideTool" data-en="✏ Draw guide line (H)">✏ Hilfslinie zeichnen (H)</button></div>
     <div class="note" data-en="Dragging draws horizontal, vertical or diagonal (45°) lines. Snap points lie on the double grid (also cell centers and edge midpoints). Right click on a line deletes it. The lines are saved with the map.">Ziehen zeichnet waagerecht, senkrecht oder diagonal (45°). Die Anfasspunkte liegen im doppelten Raster (auch Feldmitten und Kantenmitten). Rechtsklick auf eine Linie löscht sie. Die Linien werden mit der Karte gespeichert.</div>
@@ -1597,7 +1598,7 @@ window.addEventListener('dragleave', () => { if (--dragDepth <= 0){ dragDepth = 
 window.addEventListener('dragover', e => e.preventDefault());
 window.addEventListener('drop', e => {
   e.preventDefault(); dragDepth = 0; document.body.classList.remove('dragging');
-  const f = e.dataTransfer.files[0]; if (f) loadFile(f, { mapOnly: mode === 'map' });
+  const f = e.dataTransfer.files[0]; if (f && !blocked()) loadFile(f, { mapOnly: mode === 'map' });
 });
 
 /* ---------- Einklappbare Gruppen in der linken Leiste ---------- */
