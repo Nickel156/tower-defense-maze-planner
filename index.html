@@ -111,7 +111,7 @@ body[data-mode=map] .only-maze,body[data-mode=maze] .only-map{display:none!impor
 <body data-mode="maze">
 <header>
   <div class="brand">🏰 TD Maze Planner</div>
-  <div class="seg" id="modeSeg">
+  <div class="seg no-readonly" id="modeSeg">
     <button data-mode="map" data-en="① Draw map">① Map zeichnen</button>
     <button data-mode="maze" class="on" data-en="② Draw maze">② Maze zeichnen</button>
   </div>
@@ -1455,7 +1455,7 @@ async function exportPng(){
 }
 
 /* ---------- Verdrahtung ---------- */
-document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => { if (!blocked()) setMode(b.dataset.mode); });
 $('btnUndo').onclick = undo; $('btnRedo').onclick = redo; $('btnFit').onclick = fitView;
 $('mapName').oninput = e => { map.name = e.target.value; $('curMap').textContent = `${map.name} (${map.w}×${map.h})`; };
 $('btnNew').onclick = () => {
