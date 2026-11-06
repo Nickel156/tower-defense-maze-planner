@@ -84,6 +84,7 @@ label.lbl span:first-child{min-width:104px}
 #stage{flex:1;position:relative;min-width:0;background:#0b0d10}
 #cv{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}
 #cv.pan{cursor:grabbing}
+body.readonly #cv:not(.pan){cursor:grab}
 #banner{position:absolute;left:34px;top:34px;right:14px;pointer-events:none;display:flex}
 #banner div{background:rgba(20,24,30,.92);border:1px solid var(--line);border-left:4px solid var(--warn);padding:7px 12px;border-radius:6px;max-width:560px}
 #banner div.err{border-left-color:var(--danger)}
@@ -323,6 +324,7 @@ const EN = {
   'Ungültige Datei.':'Invalid file.', 'Ungültige Rastergröße.':'Invalid grid size.', 'Kartendaten beschädigt.':'Map data corrupted.',
   'Maze-Daten beschädigt.':'Maze data corrupted.', 'Das ist keine TD-Map/Maze-Datei.':'This is not a TD map/maze file.',
   'Fehler: {0}':'Error: {0}', '„{0}“ geladen.':'“{0}” loaded.',
+  'Nur Ansicht – hier kann gerade nichts geändert werden.':'View only – nothing can be changed right now.',
   'Startkarte „{0}“ geladen.':'Start map “{0}” loaded.', 'Startkarte fehlerhaft: {0}':'Start map is faulty: {0}',
   'Einmalig: Bitte diese HTML-Datei auswählen – Laden/Speichern öffnet danach immer in ihrem Ordner.':'One-time step: please select this HTML file – load/save dialogs will then always open in its folder.',
   'Ordner gemerkt. Bitte jetzt noch einmal klicken.':'Folder remembered. Please click once more.',
@@ -837,8 +839,11 @@ function restore(s){
   syncInputs(); recompute();
 }
 function pushHistory(pre){ history.push(pre); if (history.length > 80) history.shift(); future = []; updateUndoUI(); }
-function undo(){ if (!history.length) return; future.push(snapshot()); restore(history.pop()); updateUndoUI(); }
-function redo(){ if (!future.length) return; history.push(snapshot()); restore(future.pop()); updateUndoUI(); }
+function undo(){ if (blocked() || !history.length) return; future.push(snapshot()); restore(history.pop()); updateUndoUI(); }
+function redo(){ if (blocked() || !future.length) return; history.push(snapshot()); restore(future.pop()); updateUndoUI(); }
+/* Nur-Ansicht (über window.TD.setReadOnly, z. B. beim Zuschauen auf der Website): Ändern gesperrt, Ansicht frei */
+let readOnly = false;
+function blocked(){ if (readOnly) toast('Nur Ansicht – hier kann gerade nichts geändert werden.'); return readOnly; }
 function updateUndoUI(){ $('btnUndo').disabled = !history.length; $('btnRedo').disabled = !future.length; }
 
 /* ---------- Ansicht ---------- */
@@ -1077,12 +1082,13 @@ addEventListener('wheel', e => {
   view.ox = mx-(mx-view.ox)*ns/view.s; view.oy = my-(my-view.oy)*ns/view.s; view.s = ns; constrainView();
 }, { capture:true, passive:false });
 cv.addEventListener('pointerdown', e => {
-  if (e.button === 1 || (e.button === 0 && spaceDown)){
+  if (e.button === 1 || (e.button === 0 && (spaceDown || readOnly))){   // Nur-Ansicht: Linksziehen verschiebt
     e.preventDefault(); cv.setPointerCapture(e.pointerId);
     pan = { x:e.clientX, y:e.clientY, ox:view.ox, oy:view.oy }; cv.classList.add('pan'); return;
   }
   if (e.button !== 0 && e.button !== 2) return;
   e.preventDefault();
+  if (blocked()) return;
   const c = cellAt(e, false); if (!c.inside) return;
   cv.setPointerCapture(e.pointerId);
   if (mode === 'map' && settings.shape === 'guide'){ startGuide(e, c); return; }
@@ -1239,6 +1245,7 @@ function setMap(m, w2){
   syncInputs(); recompute(); fitView();
 }
 function resizeMap(nw, nh){
+  if (blocked()) return;
   nw = Math.max(5, Math.min(300, nw|0)); nh = Math.max(5, Math.min(300, nh|0));
   if (nw === map.w && nh === map.h) return;
   // Verschiebung des bisherigen Inhalts: Änderung links/oben schiebt ihn, rechts/unten nicht, beidseitig halbiert
@@ -1260,6 +1267,7 @@ function resizeMap(nw, nh){
 }
 
 function mirrorMap(horizontal){          // horizontal: links↔rechts, sonst oben↔unten
+  if (blocked()) return;
   const w = map.w, h = map.h, pre = snapshot();
   const cells = new Uint8Array(w*h), nwalls = new Uint32Array(w*h);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
@@ -1574,12 +1582,12 @@ $('margin').oninput = e => { settings.margin = e.target.value/100; syncMove(); r
 $('chkPath').onchange = e => { settings.showPath = e.target.checked; dirty = true; };
 $('chkGuides').onchange = e => { settings.showGuides = e.target.checked; dirty = true; };
 $('btnClearGuides').onclick = () => {
-  if (!guides.length) return;
+  if (!guides.length || blocked()) return;
   const pre = snapshot(); guides = []; pushHistory(pre); dirty = true;
 };
 $('chkSim').onchange = e => { sim.run = e.target.checked; dirty = true; };
 $('btnClearWalls').onclick = () => {
-  if (!walls.some(Boolean)) return;
+  if (!walls.some(Boolean) || blocked()) return;
   const pre = snapshot(); walls.fill(0); pushHistory(pre); recompute();
 };
 // Drag & Drop
@@ -1653,7 +1661,7 @@ window.addEventListener('load', () => { resizeCanvas(); fitView(); });
    Das Tool selbst und die Discord-Aktivität laden keine Zusatzskripte und verhalten sich dadurch nicht anders.
    Nur abwärtskompatibel erweitern; bei neuen Funktionen `version` erhöhen. Formate: siehe „Dateiformate“ (td-map/td-maze). */
 window.TD = {
-  version: 1,
+  version: 2,                                   // 2: load(…, { keepView, mode }), readOnly/setReadOnly
   inDiscord,
   get lang(){ return lang; },                   // 'de' | 'en'
   get mode(){ return mode; },                   // 'map' | 'maze'
@@ -1667,11 +1675,21 @@ window.TD = {
   },
   getPng: maxSide => renderPng(maxSide),        // Promise<Blob> (PNG); maxSide = größte Kantenlänge in px, z. B. 320 für ein Vorschaubild
   async load(o, opts = {}){                     // Objekt (td-map/td-maze) laden; opts.mapOnly = nur die Karte; gibt 'map' | 'maze' zurück, wirft bei Fehlern
+    // seit Version 2: opts.keepView = Zoom/Ausschnitt behalten, wenn die Kartengröße gleich bleibt;
+    //                 opts.mode = 'map' | 'maze' danach in diesen Modus wechseln (statt der üblichen Regel)
+    const before = { w:map.w, h:map.h, s:view.s, ox:view.ox, oy:view.oy };
     const kind = await loadObject(o, opts.mapOnly);
-    if (opts.goMaze && mode !== 'maze') setMode('maze');
+    if (opts.mode === 'map' || opts.mode === 'maze') setMode(opts.mode);
+    else if (opts.goMaze && mode !== 'maze') setMode('maze');
     else if (kind === 'maze' && mode !== 'maze') setMode('maze');
     else setMode(mode);
-    fitView(); return kind;
+    if (opts.keepView && before.w === map.w && before.h === map.h){ view.s = before.s; view.ox = before.ox; view.oy = before.oy; constrainView(); }
+    else fitView();
+    return kind;
+  },
+  get readOnly(){ return readOnly; },           // seit Version 2
+  setReadOnly(on){                              // seit Version 2: true = Ändern gesperrt (Ansicht verschieben/zoomen bleibt, Linksziehen verschiebt)
+    readOnly = !!on; stroke = null; document.body.classList.toggle('readonly', readOnly); dirty = true;
   },
   toast: (text, ...args) => toast(text, ...args),   // Meldung unten; Text wird nur übersetzt, wenn er in EN steht
   on(ev, fn){ (tdListeners[ev] = tdListeners[ev] || []).push(fn); },                       // 'change' | 'load' | 'mode' | 'lang'
